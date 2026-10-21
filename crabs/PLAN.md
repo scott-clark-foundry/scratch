@@ -99,11 +99,17 @@ view.
    scent (closer, fresher bait, crab downstream of the pot) means stronger
    bias.
 3. Otherwise the crab takes a random step whose direction and length are
-   weighted by the desirability of the surface around it.
+   weighted by the desirability of its surroundings. Desirability is the
+   combined pull of every field and vector field at that spot: depth,
+   slope, substrate, temperature, food, and the current pushing on the
+   crab. Each contributes a direction and a strength; the step is random
+   but drawn from a distribution those pulls shape. On flat uniform bottom
+   with no current the step is truly random; a temperature gradient leans
+   it warm, current leans it downstream, bait leans it toward the pot.
 
-Rule 2 is rule 3 with scent added to the desirability surface, so there is
-one rule: each tick a crab draws a step from a distribution shaped by
-desirability, and the bait cloud is one more term in desirability. The lab
+Rule 2 is rule 3 with scent added as one more pull, so there is one rule:
+each tick a crab draws a step from a distribution shaped by all the pulls
+on it. The lab
 entry rate (8% per approach) and the Bristol Bay soak curve (catch doubling
 from 24 to 72 h) are not separate mechanisms; they calibrate how strongly
 the cloud pulls and how far it reaches. Both are dev-view knobs.
