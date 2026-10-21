@@ -12,7 +12,8 @@ Decisions so far:
 |---|---|
 | Setting | Real Bering Sea, lightly stylized. Coarse map, not a chart. |
 | Species (MVP) | Red king crab, Bristol Bay stock. Snow crab and tanner later. |
-| Population model | **Agent-based.** Each simulated crab is a "super-individual" standing for N real crab that share a position and state; N is large (hundreds) far from gear and 1 near pots, splitting and merging as pots come and go. Environment (depth, temperature, current, bait plume) stays as grid layers the crab read. Behavior rules from literature, written per crab, kept simple and tunable. (Replaced the earlier density-field design: per-crab rules are easier to state and tune, and patchiness comes free.) |
+| Population model | **Hybrid.** World level: crab density per 5 km cell by class, updated daily. Near gear: crab within a patch around each pot string are materialized as individual agents, updated hourly, and dissolve back into density when they leave or the gear does. One movement rule, "probability of stepping to each neighbouring cell," runs as counts at world level and as coin flips per crab in patches. Environment layers (depth, temperature, current, scent) are read from the world sim. |
+| Tides | Modeled for the whole Bering Sea, not just Bristol Bay: water level and current per cell per hour from harmonic constants (NOAA stations interpolated; a gridded tidal model later). |
 | Time | Real-time with speed control (pause / 1x / 10x / 100x). Seasons roll by. |
 | Player loop (MVP) | Drop pots, choose bait and soak time, haul, see catch by sex/size. No boat or money yet. |
 | Fail state | None. Pure sandbox; score is total catch. |
@@ -59,43 +60,46 @@ Static (from data or hand-drawn for now):
 Dynamic:
 - bottom temperature (one value per 5 km cell, daily; seasonal cycle plus a
   cold-pool blob)
-- current vector (1–5 km, hourly; tidal, strength from the moon)
+- water level and current vector (1–5 km, hourly; tidal, from harmonic
+  constants covering the whole Bering Sea, strength following the moon)
 - bait plume per pot (100 m, hourly; stretched downstream by the current)
 - habitat score per crab class (daily; depth preference × temperature
   preference × substrate bonus)
 - live-cell mask per class (which cells a crab may step into)
 
-### Crab: agents with adaptive grouping
+### Crab: density in the world, individuals near gear
 
-Each agent is a super-individual: a record with position, sex, size class,
-shell age, molt and egg state, and a count N of real crab it stands for.
+**World level.** Each 5 km cell holds a count of crab per class (juvenile,
+sublegal male, legal male, mature female). Once a day, each cell's crab are
+split among the cell and its neighbours by the movement rule below, then
+mortality, molting and recruitment apply as rates.
 
-- Far from gear, N is large (start at 500). Forty million crab become
-  ~80,000 agents.
-- When a pot string is set, agents within its patch split into N = 1
-  individuals so each crab reacts to bait on its own.
-- When the last pot in a patch is hauled, individuals merge back into groups.
-  Counts are exact through split and merge.
+**Patches.** When a pot string is set, the sim draws a patch around it
+(about 200–300 m past the outermost pot). The crab the world density says
+are inside become individual agents, each with position, sex, size, shell
+age and state, and are subtracted from the world density; the patch now
+owns them. Every hour each agent applies the movement rule on 100 m cells
+(a crab walks about one cell per hour), smells bait if it is inside a
+plume, walks toward the pot, and rolls to enter. Crab that step out of the
+patch dissolve back into world density. The patch edge is a membrane: each
+hour the world density just outside sends in crab at a rate set by density
+× edge length × wandering speed, which is how a pot keeps catching for days.
+When the last pot in a patch is hauled, remaining agents fold back into
+density. Counts are exact throughout.
 
-Each daily tick, every agent:
-1. Looks at the habitat score of nearby cells and steps toward the best one,
-   at a speed drawn around 0.8 km/day (literature), slower for females.
-2. Takes a small random step (stands in for wandering; juveniles clump).
-3. Rolls for natural mortality (0.23/yr males, 0.26/yr females, as a daily
-   probability scaled by N).
-4. On its molt date, may grow into the next size class.
+Inside a patch, agents are single crab: within 200 m of a pot there are only
+tens of adults, so grouping isn't needed.
 
-Each hourly tick, inside fine patches only, every individual:
-1. Checks whether it is inside a bait plume. If so, walks toward the pot at
-   1–3 m/min.
-2. On reaching the pot, rolls to enter (about 8% per approach; a crab
-   makes 2–4 approaches). Entered crab are held in the pot.
+**One movement rule for both levels.** For a crab in a cell, the probability
+of stepping to each neighbouring cell (or staying) comes from the vector
+field at that cell: habitat-score gradient (daily, from depth, temperature,
+substrate, season), scent gradient (hourly, inside plumes), and a nudge from
+current. At world level the same probabilities move fractions of the cell's
+count; in patches they are coin flips per crab. The density field is the
+expected value of the per-crab rule, so the two levels can't disagree.
 
-Once a year, in summer, new juvenile agents appear in nursery cells, scaled
-by last spring's mature females with heavy randomness.
-
-Crab density is a readout, not a state: count agents (weighted by N) per cell
-for the dev-view heatmap.
+Crab density on the dev view is the world field plus a count of agents per
+cell inside patches.
 
 ### Pots
 
@@ -130,12 +134,14 @@ the subset the literature supports and stubs the rest as parameters.
 ### M1 — Sim core
 - Grid world with static layers (GEBCO depth for Bristol Bay).
 - Seasonal temperature and tidal current layers.
-- Agent population by class with super-individual grouping; split and merge
-  around pot strings.
-- Daily movement on habitat score; mortality; molt; recruitment.
-- Pot model: place, soak, hourly bait response in patches, haul → catch.
-- pytest coverage: counts conserved through split/merge, migration direction
-  by month, soak curve matches Pengilly & Tracy ratios.
+- World density by class; daily step-probability movement; mortality; molt;
+  recruitment.
+- Patches: materialize agents from density, hourly movement, membrane edge,
+  dissolve on exit or haul.
+- Pot model: place, soak, scent plume from current, enter roll, haul → catch.
+- pytest coverage: counts conserved through materialize/dissolve, migration
+  direction by month, soak curve matches Pengilly & Tracy ratios, world
+  density matches the average of many agent runs on the same rule.
 
 ### M2 — Renderer and MVP loop (this session)
 - pygame-ce window: map, pots, HUD, speed controls.
