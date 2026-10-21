@@ -112,5 +112,9 @@ crabs/
 ## Open questions
 
 - How coarse can the grid be and still feel right? Start ~10 km cells, tune.
-- Real bathymetry data vs. hand-drawn: start hand-drawn, swap in GEBCO later.
+- Bathymetry (depth map) source. Decided: start with GEBCO (global grid,
+  ~450 m cells, free, easy download). For the beauty pass, swap in the AFSC
+  Zimmermann & Prescott smooth-sheet grids (100 m, what NOAA crab scientists
+  use). Finer data (1–8 m NOAA hydrographic surveys, BlueTopo) exists only in
+  surveyed strips near ports and lanes, and our sim cells are 1–10 km anyway.
 - Is netting color actually documented anywhere? Treat as speculative until shown.
