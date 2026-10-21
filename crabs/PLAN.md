@@ -21,6 +21,26 @@ Decisions so far:
 | Units | The sim computes in metric (meters, km, °C, mm, kg). The screen shows either metric or the units crabbers use: fathoms for depth, nautical miles for distance, °F, inches for crab width, pounds for weight. A settings toggle switches; the renderer converts at display time only. |
 | Research | Literature pass first; model rules written up in `docs/` with sources before code. |
 
+## Resolution: coarse everywhere, fine where it matters
+
+Crabbers set pots as close as 1/10 mile (160 m) apart, so the sim needs
+100 m cells around pots. But 100 m cells across all of Bristol Bay is 16
+million cells, too many to update every tick in Python. So we use two
+layers, an approach weather models call adaptive mesh refinement:
+
+- **Ocean grid (~5 km cells, about 6,400 cells).** Runs everywhere, every
+  tick. Migration, mortality, growth, and recruitment live here.
+- **Fine patches (100 m cells).** Created around each pot or sensor, about
+  5 × 5 km each. The coarse cell's crab are split among the fine cells by
+  the 100 m depth map plus seeded random texture, so a spot looks the same
+  each time it's refined. Crab move at fine scale toward bait and with the
+  current. Fine patches tick hourly; the ocean grid ticks daily. When the
+  last pot leaves a patch, its fine cells are summed back into the coarse
+  cell and the patch is dropped.
+
+The total crab in a patch always equals the coarse cell's total, so nothing
+is created or lost by refining. Open: patch size (5 km is the first guess).
+
 ## The model (sketch — refined after research)
 
 The sea is a grid. Per cell we store static fields and dynamic fields.
@@ -111,7 +131,7 @@ crabs/
 
 ## Open questions
 
-- How coarse can the grid be and still feel right? Start ~10 km cells, tune.
+- Ocean grid cell size: start ~5 km, tune. Fine patch size: start 5 km square.
 - Bathymetry (depth map) source. Decided: start with GEBCO (global grid,
   ~450 m cells, free, easy download). For the beauty pass, swap in the AFSC
   Zimmermann & Prescott smooth-sheet grids (100 m, what NOAA crab scientists
