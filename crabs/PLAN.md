@@ -86,19 +86,30 @@ skipped, so nothing is counted twice. The environment the super crab
 react to (depth, temperature, current, scent, food) is snapshotted from the
 world layers and refreshed as they change.
 
-Every hour each super crab applies the movement rule on 100 m cells (a crab
-walks about one cell per hour), smells bait if it is inside a plume, walks
-toward the pot, and rolls to enter. When the pot is hauled, the catch is
-removed and the remaining super crab fold back into world density. Counts
-are exact throughout.
+Super crab are not on a grid. Each has a position in metres and steps any
+distance in any direction, reading the fields (terrain at 100 m, scent as
+a formula of distance and bearing from the pot relative to the current)
+at its own position. Ticks near pots are short, 1–10 minutes, so a crab
+walking 1–3 m/min moves a few metres per tick and visibly crawls in the dev
+view. A crab that reaches the pot enters a "searching" state and rolls to
+enter on each approach (about 8%), which is a state machine rather than
+spatial movement. When the pot is hauled, the catch is removed and the
+remaining super crab fold back into world density. Counts are exact
+throughout.
 
-**One movement rule for both levels.** For a crab in a cell, the probability
-of stepping to each neighbouring cell (or staying) comes from the vector
-field at that cell: habitat-score gradient (daily, from depth, temperature,
-substrate, season), scent gradient (hourly, inside plumes), and a nudge from
-current. At world level the same probabilities move fractions of the cell's
-count; around pots they are coin flips per super crab. The density field is
-the expected value of the per-crab rule, so the two levels can't disagree.
+**One set of preferences, two movement rules.** Both levels read the same
+inputs: habitat-score gradient (daily, from depth, temperature, substrate,
+season), scent gradient (inside plumes), and a nudge from current. At
+world level the rule is "what fraction of this 5 km cell's density steps to
+each neighbouring cell today." Near pots it is "which direction and how
+far does this crab step this minute," drawn from the same vector field.
+Tests check that many agent runs average out to the world rule.
+
+| Level | Crab are | Fields at | Tick |
+|---|---|---|---|
+| World | density per 5 km cell | 5 km | daily |
+| Around pots | agents at metre positions | 100 m terrain; scent by formula | 1–10 min |
+| At the pot | agent in searching state, rolling to enter | n/a | per approach |
 
 Crab density on the dev view is the world field plus the super crab per
 cell around pots.
