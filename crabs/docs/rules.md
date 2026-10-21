@@ -1,150 +1,201 @@
-# Behavior rules the sim implements
+# How the crabs behave: the rules the sim follows
 
-Distilled from [research.md](research.md). Each rule is tagged by how well the
-literature supports it: **strong**, **moderate**, or **speculative**. Every
-number here is a starting value and a named parameter in the sim, so it can be
-tuned (or toggled off) from the dev view.
+This is the list of behaviors the simulation will implement for Bristol Bay red
+king crab. Each rule comes from the literature summarized in
+[research.md](research.md). The tag after each rule says how well the evidence
+supports it:
 
-The population is four classes, each a density field on the grid:
+- **strong** — several studies or decades of survey data agree
+- **moderate** — one good study, or a well-reasoned inference from survey patterns
+- **speculative** — a plausible guess; no direct evidence for king crab
 
-| Class | Definition | Notes |
+Every number below is a starting value and will be a named setting in the game,
+so we can change it from the developer view and watch what happens.
+
+Depths are given in meters with fathoms in parentheses (1 fathom = 1.83 m).
+Crab sizes are carapace length in millimeters, which is how the science
+measures them; the game can show carapace width in inches, which is how the
+fishery measures them (legal size is 135 mm length ≈ 6.5 in width).
+
+## How the sim represents crab
+
+The sea is a grid of cells, each a few kilometers across. Instead of tracking
+millions of individual crab, each cell stores *how many crab of each kind* are
+in it. We call that number the cell's **density**. Movement means density
+flowing from one cell to its neighbors.
+
+There are four kinds of crab, chosen because they matter differently to a pot:
+
+| Kind | Who it is | Why it's its own group |
 |---|---|---|
-| `juvenile` | <90 mm CL, both sexes | Nursery-bound, pods |
-| `sublegal_male` | 90–134 mm CL | Caught and discarded |
-| `legal_male` | ≥135 mm CL | The only keepable crab |
-| `mature_female` | ≥90 mm CL | Caught and discarded; drives recruitment |
+| **Juveniles** | Under 90 mm, either sex | Live in shallow nurseries; rarely in pots |
+| **Sublegal males** | 90–134 mm | Enter pots but must be thrown back |
+| **Legal males** | 135 mm and up | The only crab you can keep |
+| **Mature females** | 90 mm and up | Enter pots, must be thrown back; produce next year's crab |
 
-## Movement
+## Where crab go
 
-**R1. Seasonal depth target** — *strong*
-Each class has a preferred depth that changes over the year. Density flows
-downhill on a "habitat score" built from depth and temperature.
-- Mature males and females: 25–50 m from February through May (molt/mate
-  inshore); 50–100 m from July through January (feed offshore). Transitions
-  ramp over ~6 weeks (Jun, late Jan).
-- Juveniles: <50 m all year.
+**Rule 1. Crab move to a preferred depth, and that depth changes with the
+season.** — *strong*
+Adults spend February through May in shallow water, 25–50 m (14–27 fathoms),
+where they molt and mate. From July through January they live deeper, 50–100 m
+(27–55 fathoms), where they feed. The shift each way takes about six weeks
+(June, and again late January). Juveniles stay shallower than 50 m all year.
+In the sim, each cell gets a "how good is this spot" score from its depth, and
+density flows toward better-scoring neighbors.
 
-**R2. Movement speed** — *moderate*
-Adult density advects at mean 0.8 km/day, capped near 2.5 km/day. Net
-seasonal displacement works out to 50–100 km, matching tag data.
+**Rule 2. Crab walk about 0.8 km per day.** — *moderate*
+Tagged males in Bristol Bay averaged 0.83 km/day (about 0.45 nautical miles),
+ranging from almost nothing up to 2.5 km/day. Over a season that adds up to a
+50–100 km (27–54 nmi) move from the spring grounds to the autumn grounds. The
+sim caps how fast density can flow between cells to match.
 
-**R3. Temperature preference** — *strong (females), moderate (males)*
-Habitat score peaks at 2–4 °C bottom temperature.
-- Mature females: strong penalty below 2 °C (they avoid the cold pool).
-- Mature males: mild penalty above 4 °C.
+**Rule 3. Crab prefer bottom water between 2 and 4 °C (36–39 °F).** — *strong
+for females, moderate for males*
+Mature females strongly avoid water colder than 2 °C, which in the Bering Sea
+means avoiding the "cold pool," a blob of near-freezing bottom water left over
+from winter sea ice. Mature males mildly avoid water warmer than 4 °C. In the
+sim, temperature adds to the same "how good is this spot" score as depth.
 
-**R4. Warm year vs. cold year autumn grounds** — *strong*
-Emerges from R1 + R3 rather than being scripted: in warm years the autumn
-male hot spot is central Bristol Bay (~56.5° N, 163° W); in cold years it is a
-band 30–60 km off the Alaska Peninsula. The sim gets a "year warmth" knob that
-shifts the temperature field; we check that this hot-spot swap falls out.
+**Rule 4. Warm years and cold years put the autumn crab in different places.**
+— *strong*
+Twelve years of fishing logs show the autumn concentration of legal males sits
+in central Bristol Bay in warm years and in a band 30–60 km off the Alaska
+Peninsula in cold years. We won't script this. It should emerge from rules 1
+and 3 once we give the sim a "how warm is this year" setting that reshapes the
+temperature map. If it doesn't emerge, something is wrong with the model.
 
-**R5. Females are stickier** — *moderate*
-Female diffusion and advection speed are ~0.5× male. Females stay closer to
-where they were.
+**Rule 5. Females stay closer to home than males.** — *moderate*
+Pot-survey and bycatch patterns suggest females move about half as far as
+males over a season. The sim gives females half the male walking speed and
+half the random spread (rule 6).
 
-**R6. Random spread** — *strong (as a modeling choice)*
-A small diffusion term on every class, so density never collapses to a point
-and patches blur over weeks. Juveniles get *less* diffusion plus a clumping
-term to stand in for podding (*moderate*).
+**Rule 6. Crab spread out a little at random.** — *strong as a modeling
+choice*
+Every kind of crab drifts randomly a small amount each day, so a dense patch
+blurs over weeks rather than staying a sharp point. Juveniles get less random
+spread plus a tendency to clump, standing in for "podding," where thousands of
+young crab pile together by day and spread out to feed at night (*moderate*;
+documented at Kodiak, assumed similar in Bristol Bay).
 
-**R7. Boundaries** — *strong*
-Crab do not cross onto land, west of ~165° W, or deeper than ~120 m. The
-southwest bay (north of Unimak Pass) starts near-empty.
+**Rule 7. Crab stay within the known range.** — *strong*
+Density can't flow onto land, west of about 165° W, or into water deeper than
+about 120 m (66 fathoms). The southwest corner of the bay, north of Unimak
+Pass, starts almost empty because that's where the crab are today, though it
+was a major female area before 1977.
 
-## Life cycle
+## How the population changes over the years
 
-**R8. Molt / mate / hatch timing** — *strong*
-Centered on early May. Delayed 2–4 weeks when spring bottom temperature is
-below 2 °C. (MVP: timing only matters for the recruitment pulse and for a
-future "soft-shell" catch quality flag.)
+**Rule 8. Molting, mating, and egg hatching center on early May.** — *strong*
+A cold spring, with bottom water below 2 °C, pushes the whole cycle back two to
+four weeks. In the MVP the timing matters only for when new juveniles appear
+(rule 11). Later it could flag soft-shell crab, which are worth less.
 
-**R9. Growth by molting** — *moderate*
-Once a year, a fraction of each class steps up: juveniles → sublegal males
-or mature females (50/50), sublegal → legal with probability ~0.5/yr (stands
-in for the inverse-logistic molt probability and 12–15 mm increments).
+**Rule 9. Once a year, some crab grow into the next size group.** — *moderate*
+After the molt, juveniles become either sublegal males or mature females,
+half and half. About half the sublegal males cross into legal size each year.
+This stands in for the detailed molting tables in the stock assessment, which
+I couldn't fully retrieve.
 
-**R10. Natural mortality** — *strong*
-Continuous mortality 0.23/yr for males, 0.26/yr for females, applied every
-tick. Optional spring bump of 1–4% on females at 30–100 m for cod predation
-(*moderate*).
+**Rule 10. Crab die at a steady background rate.** — *strong*
+About 23% of males and 26% of females die each year from natural causes,
+applied a little every tick. Optionally, females at 30–100 m depth lose an
+extra 1–4% in spring, when Pacific cod eat soft-shell females (*moderate*).
 
-**R11. Recruitment** — *moderate*
-Each summer, 5–15 million new juveniles appear in nursery cells (<50 m along
-the Port Moller – Kvichak – Togiak nearshore), scaled by last spring's mature
-female abundance with high random variance and occasional near-zero years.
+**Rule 11. New juveniles appear each summer in the nurseries.** — *moderate*
+Between 5 and 15 million new juveniles show up in shallow cells (under 50 m)
+along the nearshore strip from Port Moller through the Kvichak River mouth to
+Togiak. How many depends on how many mature females there were in spring,
+with a lot of randomness and an occasional near-zero year, which matches the
+real stock's boom-and-bust history.
 
-**R12. Starting abundance** — *strong*
-Seed the world at roughly today's stock: ~7 M legal males, ~2–3 M sublegal
-males, ~15 M mature females, ~10 M juveniles, placed by R1/R3 habitat score.
+**Rule 12. The game starts at about today's population.** — *strong*
+Roughly 7 million legal males, 2–3 million sublegal males, 15 million mature
+females, and 10 million juveniles, placed where rules 1 and 3 say they should
+be for the start date.
 
-## Pots and catch
+## What a pot catches
 
-**R13. Catch per pot** — *moderate*
-A pot samples the crab within its bait-plume footprint. Expected catch of a
-class = local density × effective area × soak factor × bait factor ×
-modifiers. Soak factor = 1 − e^(−t/20 h), near saturation by 48 h. Cap total
-crab per pot around 60 (pot saturation).
-- Sublegal:legal ratio declines with longer soaks (larger males stay, small
-  ones leave): soak factor for sublegals and females saturates earlier and
-  then decays slightly.
+**Rule 13. A pot catches a share of the crab nearby, and more the longer it
+soaks, up to a point.** — *moderate*
+Expected catch of each kind = how many of that kind are in the pot's bait
+footprint × how much of that footprint the pot effectively covers × a soak
+factor × a bait factor × any modifiers. The soak factor rises quickly in the
+first day and levels off by about 48 hours; leaving a pot for a week barely
+beats two days. A pot holds about 60 crab at most. Longer soaks also shift the
+mix toward legal males, because small males and females tend to wander back
+out while big males stay.
 
-**R14. Bait** — *moderate (ranking), speculative (numbers)*
-Bait type sets the attraction multiplier: herring 1.0, cod 0.9, squid 0.6,
-none 0.15. Amount scales footprint radius with diminishing returns (2 bags ≈
-1.3× one bag). Freshness decays attraction over 24–48 h in the water.
-Combinations take the max type bonus plus a small mixing bonus.
+**Rule 14. Bait type, amount, and freshness change how many crab come.** —
+*moderate for the ranking, speculative for the exact numbers*
+Herring works best (multiplier 1.0), then cod (0.9), then squid (0.6). An
+unbaited pot still catches a few (0.15). More bait widens the footprint with
+diminishing returns: two bags draw about 1.3× one bag. Bait loses its pull over
+24–48 hours in the water. Mixing bait types takes the best type's bonus plus a
+small extra.
 
-**R15. Bait plume follows current** — *moderate*
-The footprint is an ellipse stretched downstream along the local current
-vector (crab approach from downstream). Tide phase rotates the current, so
-the plume swings with the tide.
+**Rule 15. The bait scent drifts with the current, so the pot's footprint is
+an oval pointing downstream.** — *moderate*
+Lab video shows crab approach pots from downstream, following the scent. The
+sim stretches the footprint along the local current. Because tides swing the
+current back and forth, the footprint swings too.
 
-**R16. Entrance inefficiency** — *strong (lab)*
-Only ~8% of crab that find the pot get in. This is folded into "effective
-area"; exposed as a parameter.
+**Rule 16. Most crab that find a pot don't get in.** — *strong in the lab*
+Only about 8% of approaches end with a crab inside. The sim folds this into
+"how much of the footprint the pot covers" in rule 13, and shows it as its
+own setting.
 
-**R17. Legal rules at haul** — *strong*
-Keep legal males only. Females and sublegals are counted and returned (they
-go back into the local density field). Season is Oct 15 – Jan 15; the MVP
-sandbox lets you fish any time but shows the season status.
+**Rule 17. At haul, you keep legal males and return everything else.** —
+*strong*
+Females and sublegal males are counted, then put back into the cell they came
+from. The real season runs October 15 to January 15. The sandbox lets you fish
+any time but shows whether the season is open.
 
-## Explicitly cosmetic / no-evidence (toggleable so you can see they do nothing)
+## Things we'll show as settings even though the evidence says they do nothing
 
-**R18. Netting color** — *speculative / no evidence for king crab*
-Default multiplier 1.0 for every color. Exposed as a knob so you can see
-what it would do if it did matter.
+These are included so you can flip them on and watch the catch not change — or
+change, if we later decide the game is more fun that way.
 
-**R19. Time of day** — *speculative*
-No adult diel catch effect in the literature. Juveniles are nocturnally
-active, so juvenile catch gets a gentle night boost; adults get none.
+**Rule 18. Netting color.** — *speculative; no king crab study exists*
+Every color starts at multiplier 1.0. The closest evidence is a small effect on
+blue crab in Chesapeake Bay.
 
-**R20. Moon phase** — *no evidence*
-Cosmetic only in MVP: it drives tide amplitude (spring/neap), which feeds R15.
+**Rule 19. Time of day.** — *speculative*
+Nothing in the literature shows adult king crab catch changing by time of day.
+Juveniles are active at night, so juvenile catch gets a gentle night boost;
+adults get none.
 
-## How the brief's variables map
+**Rule 20. Moon phase.** — *no evidence of a direct effect*
+The moon drives tide strength (spring tides near full and new moon, neap tides
+in between), and tide strength feeds the current in rule 15. That's its only
+effect in the MVP.
 
-| Variable from the brief | Where it lives |
+## Where the variables from the brief ended up
+
+| Variable | Rule(s) |
 |---|---|
-| Time of year | R1, R8, R11, R17 |
-| Time of day | R19 |
-| Moon and tide cycles | R20 → R15 |
-| Ice edge | Not modeled; it acts through temperature (R3) |
-| Bait kind / freshness / combination / amount | R14 |
-| Bait plume movement | R15 |
-| Tides | R15, R20 |
-| Weather | Not in MVP (later: fleet access, not crab behavior) |
-| Predators | R10 (female spring mortality) |
-| Natural food | Diffuse offshore pull in R1; not mapped |
-| Sexual desire | Inshore spring migration, R1/R8 |
-| Body size | Four size/sex classes |
-| Netting color | R18 |
+| Time of year | 1, 8, 11, 17 |
+| Time of day | 19 |
+| Moon and tide cycles | 20, feeding 15 |
+| Ice edge | Not modeled directly; it acts through cold water in rule 3 |
+| Bait kind, freshness, combination, amount | 14 |
+| Movement of the bait cloud | 15 |
+| Tides | 15, 20 |
+| Weather | Not in MVP. Later it would limit when the boat can fish, not where crab go |
+| Predators | 10 (cod eating soft-shell females) |
+| Crab's natural food | Not mapped. The offshore pull in rule 1 stands in for "going to feed" |
+| Mating drive | The spring inshore move in rules 1 and 8 |
+| Body size | The four kinds of crab |
+| Netting color | 18 |
 
-## Open questions for review
+## Questions to settle before coding
 
-1. Four classes enough for MVP, or split sublegal males into two bins so
-   growth into legal size is visible over a couple of years?
-2. Pot cap of ~60 and τ = 20 h — fine as starting values?
-3. Treat the SW bay as empty (today) or seed it lightly for gameplay?
-4. Should the MVP calendar start in October (fishing season, instant
-   gratification) or in spring (watch the migration first)?
+1. Are four kinds of crab enough for the MVP, or should we split males into
+   more size groups so you can watch a year class grow into legal size?
+2. Are the pot cap (about 60 crab) and the soak curve (levels off by 48 h)
+   fine as starting values?
+3. Should the southwest bay start empty, as it is today, or lightly seeded so
+   there's something to find there?
+4. Should the clock start October 1, two weeks before the season opens, so
+   pots pay off right away? Or April 1, so you watch the spring migration
+   first?

@@ -17,3 +17,9 @@ and are not expected to share code, dependencies, or tooling.
   to run it.
 - Only shared, repo-wide files (like this `CLAUDE.md` or a root `.gitignore`)
   belong at the root.
+
+## Writing
+
+Follow the writing guidance in [AGENTS.md](AGENTS.md) for all docs, plans, and
+replies. In short: plain words, name who does what, explain connections, and
+explain any technical term the first time it appears.

@@ -18,6 +18,7 @@ Decisions so far:
 | Fail state | None. Pure sandbox; score is total catch. |
 | Visuals | pygame-ce window. Heatmaps, currents and temperature in dev view. |
 | Architecture | `crabs/sim` is pure numpy, no pygame, tested headless with pytest. `crabs/ui` is a thin pygame-ce renderer on top. |
+| Units | The sim computes in metric (meters, km, °C, mm, kg). The screen shows either metric or the units crabbers use: fathoms for depth, nautical miles for distance, °F, inches for crab width, pounds for weight. A settings toggle switches; the renderer converts at display time only. |
 | Research | Literature pass first; model rules written up in `docs/` with sources before code. |
 
 ## The model (sketch — refined after research)
