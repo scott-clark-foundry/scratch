@@ -116,15 +116,20 @@ be for the start date.
 
 ## What a pot catches
 
-**Rule 13. A pot catches a share of the crab nearby, and more the longer it
-soaks, up to a point.** — *moderate*
+**Rule 13. A pot catches a share of the crab nearby, and keeps catching for
+days.** — *strong for the soak curve (Bristol Bay field data), moderate for
+the rest*
 Expected catch of each kind = how many of that kind are in the pot's bait
 footprint × how much of that footprint the pot effectively covers × a soak
-factor × a bait factor × any modifiers. The soak factor rises quickly in the
-first day and levels off by about 48 hours; leaving a pot for a week barely
-beats two days. A pot holds about 60 crab at most. Longer soaks also shift the
-mix toward legal males, because small males and females tend to wander back
-out while big males stay.
+factor × a bait factor × any modifiers. The soak curve comes from a Bristol
+Bay experiment (Pengilly & Tracy 1998): legal males per pot averaged 8.7 at
+12 hours, 10.5 at 24 hours, and 21.9 at 72 hours. So the first day's catch
+is mostly crab that were already within scent range; after that the pot
+keeps filling as crab wander into the plume. Catch at three days is about
+twice the catch at one day. A pot holds about 60 crab at most. Longer soaks
+shift the mix toward legal males (nonlegal catch rose only 20.1 → 28.6 over
+the same soaks), because small males and females tend to wander back out
+while big males stay.
 
 **Rule 14. Bait type, amount, and freshness change how many crab come.** —
 *moderate for the ranking, speculative for the exact numbers*
@@ -136,9 +141,12 @@ small extra.
 
 **Rule 15. The bait scent drifts with the current, so the pot's footprint is
 an oval pointing downstream.** — *moderate*
-Lab video shows crab approach pots from downstream, following the scent. The
-sim stretches the footprint along the local current. Because tides swing the
-current back and forth, the footprint swings too.
+Lab and underwater video show crab approach pots from downstream, following
+the scent, and search a sector about 135° wide around the downstream
+direction. The sim stretches the footprint along the local current: faster
+current means a longer, narrower plume. Because tides swing the current back
+and forth, the footprint swings too. A crab walking toward bait moves 1–3 m
+per minute, so one 120 m away arrives in an hour or two.
 
 **Rule 16. Most crab that find a pot don't get in.** — *strong in the lab*
 Only about 8% of approaches end with a crab inside. The sim folds this into

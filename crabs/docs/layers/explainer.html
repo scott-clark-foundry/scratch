@@ -85,7 +85,10 @@
 </figure>
 
 <h2>The layers, bottom to top</h2>
-<p>Each layer is a grid of numbers over the same square. The lower layers never change or change slowly; the upper layers are computed from the ones below and change fast. The tags say whether the picture comes from real data or is a stand-in, and how often the sim recomputes it.</p>
+<p>Each layer is a grid of numbers over the same square. The layers are ordered by what depends on what: terrain at the bottom, water on top of it, then crab, then gear. The tags say whether the picture comes from real data or is a stand-in, and how often the sim recomputes it.</p>
+<div class="callout">
+  <p><strong>A layer's clock is the fastest clock among its inputs.</strong> Depth never changes, so slope never changes. Temperature changes daily, so the habitat score that uses it changes daily. The tidal current changes hourly, so the bait plume it points changes hourly. Crab density takes inputs from both the slow side (habitat score, daily) and the fast side (bait plume and current, hourly), and inside a fine patch it moves on the hourly clock because crab walking toward bait cover 100 m in about an hour. Away from any pot there is no fast input, so density on the ocean grid only moves daily.</p>
+</div>
 
 <h3>Layer 1. Depth</h3>
 <div class="meta"><span class="tag real">real shape, interpolated detail</span><span class="tag">100 m</span><span class="tag">static</span></div>
@@ -119,7 +122,7 @@
 
 <h3>Layer 8. Crab density</h3>
 <div class="meta"><span class="tag">computed</span><span class="tag">100 m in patches, 5 km elsewhere</span><span class="tag">hourly in patches, daily elsewhere</span></div>
-<p>The number of crab per cell. The ocean grid holds a total for the 5 km cell (here 4,000 legal males and 9,000 mature females, a plausible autumn count). When a patch is refined, that total is spread over the fine cells by habitat score, then roughened by seeded patchiness that stands in for podding. The fine cells always sum back to the ocean cell's count. Inside a patch, density flows toward bait and along the score gradient every hour.</p>
+<p>The number of crab per cell. The ocean grid holds a total for the 5 km cell (here 4,000 legal males and 9,000 mature females, a plausible autumn count). When a patch is refined, that total is spread over the fine cells by habitat score, then roughened by seeded patchiness that stands in for podding. The fine cells always sum back to the ocean cell's count. Two things move density: the slow drift along the habitat-score gradient (daily, from layer 6), and the fast pull toward bait (hourly, from layer 9). Inside a patch both run; on the ocean grid only the slow one does.</p>
 <figure><img src="16_density.png" alt="Two density heatmaps, legal males and mature females, patchy, in crab per hectare"><figcaption>Crab per 100 m cell (one hectare). Females are more clumped: a different seed and stronger patchiness.</figcaption></figure>
 
 <h3>Layer 9. Pots and bait plumes</h3>
@@ -128,7 +131,7 @@
 <figure><img src="17_pots_plume.png" alt="Two panels of a ten-pot string with green bait plumes pointing northeast on the flood and southwest on the ebb"><figcaption>Flood tide (left) and ebb (right): the same pots, the plume flipped. Plumes here are 150 m long at 0.3 m/s, capped at 200 m.</figcaption></figure>
 
 <h2>Stacked</h2>
-<figure><img src="20_stack.png" alt="Eight layer sheets drawn obliquely one above another, from depth at the bottom to pots and bait plumes at the top"><figcaption>Every layer over the same square. Terrain at the bottom, then water, then crab, then gear. Each sheet is computed from the ones below it.</figcaption></figure>
+<figure><img src="20_stack.png" alt="Eight layer sheets drawn obliquely one above another, from depth at the bottom to pots and bait plumes at the top"><figcaption>Every layer over the same square, ordered by dependency: terrain at the bottom, then water, then crab, then gear. Each sheet is computed from the ones below it, and each ticks as fast as its fastest input. Current (hourly) sits below habitat score (daily) because score doesn't use it; density above both uses both.</figcaption></figure>
 
 <h2>What resolution each variable deserves</h2>
 <p>The point of the stack is that different variables need different resolutions and different clocks. Paying 100 m and hourly for everything would waste nearly all the work on fields that are flat at that scale.</p>
@@ -142,7 +145,7 @@
     <tr><td>Tidal current</td><td class="num">1&ndash;5 km</td><td>hourly</td><td>Points the bait plume; strength follows the moon</td><td>Synthetic tide model</td></tr>
     <tr><td>Moon, tide phase, time of day</td><td>whole map</td><td>hourly</td><td>Single numbers, not maps</td><td>Calendar</td></tr>
     <tr><td>Habitat score</td><td class="num">5 km / 100 m in patches</td><td>daily</td><td>Changes with the month's depth preference</td><td>Rules 1, 3, 5</td></tr>
-    <tr><td>Crab density</td><td class="num">5 km / 100 m in patches</td><td>daily / hourly in patches</td><td>Migration is slow; response to bait is fast</td><td>Rules 2, 6, 9&ndash;12</td></tr>
+    <tr><td>Crab density</td><td class="num">5 km / 100 m in patches</td><td>daily / hourly in patches</td><td>Slow input: habitat score (daily). Fast input: bait plume (hourly), present only in patches</td><td>Rules 2, 6, 9&ndash;12</td></tr>
     <tr><td>Bait plume</td><td class="num">100 m or finer</td><td>hourly</td><td>120&ndash;200 m long; swings with every tide; decays as bait is eaten</td><td>Rules 14, 15; research-bait.md</td></tr>
     <tr><td>Pots, sensors</td><td>points</td><td>on placement and haul</td><td>Gear positions, soak clocks</td><td>Player</td></tr>
   </tbody>
@@ -164,7 +167,7 @@
 <ul>
   <li>Bait pulls crab from about 120 m (up to 200 m in strong current), and a crab walks that in 1&ndash;2 hours. So a fine patch only needs to reach a few hundred metres past the outermost pot, not 5 km. Patches could be much smaller than one ocean cell.</li>
   <li>Bristol Bay field data show legal-male catch still doubling between 24 and 72 hours of soak, so rule 13's "levels off by 48 h" needs revising.</li>
-  <li>Should fine patches be fixed 5 km squares aligned to the ocean grid (simplest), or follow pot strings?</li>
+  <li>Fine patches should hug pot strings (a few hundred metres past the outermost pot) rather than fill a 5 km cell. Decided in the plan; the figures above still show 5 km patches and will be redrawn when the sim exists.</li>
   <li>Do we want a middle grid (say 1 km) around the boat for things like sensors and sonar, or is two levels enough?</li>
   <li>Juvenile nurseries sit at the coast, exactly where the live-cell floor for adults removes cells. Each class needs its own mask.</li>
 </ul>

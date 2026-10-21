@@ -30,16 +30,19 @@ layers, an approach weather models call adaptive mesh refinement:
 
 - **Ocean grid (~5 km cells, about 6,400 cells).** Runs everywhere, every
   tick. Migration, mortality, growth, and recruitment live here.
-- **Fine patches (100 m cells).** Created around each pot or sensor, about
-  5 × 5 km each. The coarse cell's crab are split among the fine cells by
+- **Fine patches (100 m cells).** Created around each pot string or sensor,
+  reaching a few hundred metres past the outermost pot (bait pulls crab from
+  about 120–200 m, so beyond that the fine detail does nothing). The coarse cell's crab are split among the fine cells by
   the 100 m depth map plus seeded random texture, so a spot looks the same
   each time it's refined. Crab move at fine scale toward bait and with the
   current. Fine patches tick hourly; the ocean grid ticks daily. When the
   last pot leaves a patch, its fine cells are summed back into the coarse
   cell and the patch is dropped.
 
-The total crab in a patch always equals the coarse cell's total, so nothing
-is created or lost by refining. Open: patch size (5 km is the first guess).
+The total crab in a patch always equals what its coarse cells would hold, so
+nothing is created or lost by refining. Each layer ticks as fast as its
+fastest input: density in a patch is hourly because the bait plume is hourly,
+not because the habitat score is.
 
 ## The model (sketch — refined after research)
 
@@ -131,7 +134,7 @@ crabs/
 
 ## Open questions
 
-- Ocean grid cell size: start ~5 km, tune. Fine patch size: start 5 km square.
+- Ocean grid cell size: start ~5 km, tune.
 - Bathymetry (depth map) source. Decided: start with GEBCO (global grid,
   ~450 m cells, free, easy download). For the beauty pass, swap in the AFSC
   Zimmermann & Prescott smooth-sheet grids (100 m, what NOAA crab scientists
