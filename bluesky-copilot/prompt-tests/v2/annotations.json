@@ -142,5 +142,36 @@
       ],
       "note": "Good and friendly. The second paragraph ('You're right about the clips…') repeats what the person already said."
     }
+  },
+  "r3": {
+    "list-alcohol-marker-artists": {
+      "verdict": "FAIL",
+      "failure_modes": [
+        "described-without-checking"
+      ],
+      "note": "Five of six accounts are right and it no longer claims there are no starter packs. It described one account's daily doodles as coloured in alcohol markers when they are mostly pencil. Same family as before: describing something it did not open. I added a line to the list recipe (describe each account only from a post you looked at); that change has not been re-run."
+    },
+    "pulse-ai-drama-today": {
+      "verdict": "PASS",
+      "failure_modes": [
+        "incomplete-survey"
+      ],
+      "note": "Passes: leads with the largest dispute, accurately. But for the third round running it leaves out the two disputes about Anthropic, the company that makes the model answering. I told it explicitly to include awkward topics and it still did not. Treat this as a known blind spot to check with real model calls, not as fixed."
+    },
+    "real-onion-nvidia-huang": {
+      "verdict": "PASS",
+      "failure_modes": [],
+      "note": "45 words: it's satire, here is the real news it riffs on, one source. This is the length and shape asked for."
+    },
+    "who-is-parody-farage": {
+      "verdict": "PASS",
+      "failure_modes": [],
+      "note": "Leads with 'not the real Farage, it's a parody account', quotes the bio as proof, about 55 words."
+    },
+    "follow-middle-east-breaking-news": {
+      "verdict": "PASS",
+      "failure_modes": [],
+      "note": "Three accounts instead of five, each checked as active, each with a reason. Down from 144 words to under 100."
+    }
   }
 }

@@ -121,7 +121,7 @@ Results by round. The grading checks were tightened after round 1, so the rates 
 |---|---|---|---|
 | r1 | 40 | 35 | Three answers gave a stale picture of a story that had moved that day; one ranked a dispute without surveying; one declined a question without looking at the post. Answers ran long. |
 | r2 | 25 (5 failures, 6 new, 14 regression) | 22 | Four of five failures fixed. New: absolute claims from a narrow search ("there are no starter packs for this"). App-side tools used correctly in all six new cases. |
-| r3 | 10 | see `report.html` | Confirmation run after the round-2 fixes. |
+| r3 | 10 | 9 | Confirmation run. Simple questions now get 45 to 75 words. One list answer described an account's work without having looked at it. The "AI drama" answer passed but again left out the disputes about Anthropic. |
 
 An earlier, smaller round (`prompt-tests/cases.json`, 17 questions) shaped the first version of the instructions and is kept for reference.
 
