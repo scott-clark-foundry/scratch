@@ -3,3 +3,4 @@ dist/
 .copilot.json
 .env
 __pycache__/
+traces/

@@ -74,9 +74,9 @@ function LoginDialog() {
 
 const MAX_LENGTH = 300;
 
-function ComposerDialog({ replyTo }: { replyTo?: api.PostView }) {
+function ComposerDialog({ replyTo, initialText }: { replyTo?: api.PostView; initialText?: string }) {
   const session = useSession();
-  const [text, setText] = useState("");
+  const [text, setText] = useState(initialText ?? "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const length = api.graphemeLength(text);
@@ -134,7 +134,7 @@ export function Dialogs() {
   return (
     <>
       {ui.loginOpen && <LoginDialog />}
-      {ui.composer && <ComposerDialog replyTo={ui.composer.replyTo} />}
+      {ui.composer && <ComposerDialog replyTo={ui.composer.replyTo} initialText={ui.composer.initialText} />}
     </>
   );
 }

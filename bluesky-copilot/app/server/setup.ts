@@ -15,6 +15,7 @@ import fs from "node:fs";
 import path from "node:path";
 import Anthropic, { toFile } from "@anthropic-ai/sdk";
 import { CONFIG_PATH, SKILL_DIR, readConfig, writeConfig } from "./config.js";
+import { CLIENT_TOOLS } from "./tools.js";
 
 const AGENT_NAME = "Bluesky Copilot";
 const ENVIRONMENT_NAME = "bluesky-copilot";
@@ -90,6 +91,9 @@ async function main() {
           { name: "edit" as const, enabled: false },
         ],
       },
+      // Tools that run in the app, not the sandbox: reading the signed-in
+      // person's own timeline and notifications, and showing drafts to confirm.
+      ...CLIENT_TOOLS,
     ],
   };
   if (config.agentId) {

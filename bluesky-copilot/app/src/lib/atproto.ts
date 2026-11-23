@@ -358,6 +358,31 @@ export const like = (post: StrongRef) => createRecord("app.bsky.feed.like", { su
 export const repost = (post: StrongRef) => createRecord("app.bsky.feed.repost", { subject: { uri: post.uri, cid: post.cid } });
 export const follow = (did: string) => createRecord("app.bsky.graph.follow", { subject: did });
 export const undo = (recordUri: string) => deleteRecord(recordUri);
+/** Create a list and add accounts to it. Returns the new list's address and how many accounts were added. */
+export async function createList(name: string, description: string, handles: string[]): Promise<{ uri: string; added: number; failed: string[] }> {
+  const list = await createRecord("app.bsky.graph.list", { name, description, purpose: "app.bsky.graph.defs#curatelist" });
+  let added = 0;
+  const failed: string[] = [];
+  for (const handle of handles) {
+    try {
+      await createRecord("app.bsky.graph.listitem", { subject: await resolveDid(handle), list: list.uri });
+      added++;
+    } catch {
+      failed.push(handle);
+    }
+  }
+  return { uri: list.uri, added, failed };
+}
+
+/** Fetch one post by its bsky.app link. */
+export async function getPostByUrl(url: string): Promise<PostView | null> {
+  const match = url.match(/\/profile\/([^/]+)\/post\/([^/?#]+)/);
+  if (!match) return null;
+  const did = await resolveDid(match[1]);
+  const data = await query("app.bsky.feed.getPosts", { uris: [`at://${did}/app.bsky.feed.post/${match[2]}`] });
+  return data.posts?.[0] ?? null;
+}
+
 export const markNotificationsSeen = () => procedure("app.bsky.notification.updateSeen", { seenAt: new Date().toISOString() });
 
 const encoder = new TextEncoder();

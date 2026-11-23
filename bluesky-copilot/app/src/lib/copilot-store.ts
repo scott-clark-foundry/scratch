@@ -4,6 +4,15 @@
  */
 import { useSyncExternalStore } from "react";
 import { getSession, postPath, type PostView } from "./atproto";
+import { runClientTool } from "./copilot-tools";
+
+/** A draft the copilot prepared, shown as a card the person must confirm. */
+export interface Proposal {
+  kind: "draft_post" | "propose_list";
+  input: { text?: string; reply_to?: string; name?: string; description?: string; accounts?: string[] };
+  /** What the person did with it, for the card to show. */
+  status?: string;
+}
 
 export interface ChatMessage {
   id: string;
@@ -12,6 +21,10 @@ export interface ChatMessage {
   /** Short label shown above a question that was asked about a specific post. */
   about?: string;
   error?: boolean;
+  proposals?: Proposal[];
+  /** Which turn of the conversation this answer is, for feedback. */
+  turn?: number;
+  rating?: "up" | "down";
 }
 
 /** What a screen tells the copilot about itself. */
@@ -82,6 +95,26 @@ export function newConversation() {
 
 export function stopAnswer() {
   abort?.abort();
+}
+
+export function setProposalStatus(messageId: string, index: number, status: string) {
+  set({
+    messages: state.messages.map((m) =>
+      m.id === messageId ? { ...m, proposals: m.proposals?.map((p, i) => (i === index ? { ...p, status } : p)) } : m,
+    ),
+  });
+}
+
+/** Send a thumbs up or down for one answer. It is saved with the server's record of that answer. */
+export function rateAnswer(messageId: string, rating: "up" | "down") {
+  const message = state.messages.find((m) => m.id === messageId);
+  if (!message?.turn || !sessionId) return;
+  patchMessage(messageId, { rating });
+  fetch("/api/copilot/feedback", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sessionId, turn: message.turn, rating }),
+  }).catch(() => {});
 }
 
 export async function checkCopilot() {
@@ -169,7 +202,22 @@ export async function ask(question: string) {
         const line = block.split("\n").find((l) => l.startsWith("data: "));
         if (!line) continue;
         const event = JSON.parse(line.slice(6));
-        if (event.type === "session") sessionId = event.sessionId;
+        if (event.type === "session") {
+          sessionId = event.sessionId;
+          patchMessage(answerId, { turn: event.turn });
+        } else if (event.type === "client_tool") {
+          // The copilot asked for the person's own data. Fetch it here, with
+          // their sign-in, and hand the text back through the server.
+          const result = await runClientTool(event.name, event.input ?? {});
+          await fetch("/api/copilot/tool-result", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sessionId, toolUseId: event.toolUseId, ...result }),
+          }).catch(() => {});
+        } else if (event.type === "proposal") {
+          const current = state.messages.find((m) => m.id === answerId)?.proposals ?? [];
+          patchMessage(answerId, { proposals: [...current, { kind: event.kind, input: event.input ?? {} }] });
+        }
         else if (event.type === "activity") set({ activity: event.label });
         else if (event.type === "delta") {
           parts.set(event.id, (parts.get(event.id) ?? "") + event.text);

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { ask, detachPost, newConversation, setCopilotOpen, stopAnswer, useCopilot } from "../lib/copilot-store";
-import { ExternalOrInternal } from "../lib/util";
+import { ask, detachPost, newConversation, rateAnswer, setCopilotOpen, setProposalStatus, stopAnswer, useCopilot, type Proposal } from "../lib/copilot-store";
+import { createList, getPostByUrl, parseAtUri } from "../lib/atproto";
+import { openComposer, openLogin } from "../lib/ui-store";
+import { ExternalOrInternal, Link, useSession } from "../lib/util";
 import { Icon } from "./Icon";
 
 // ---- A small Markdown renderer ----------------------------------------------
@@ -83,6 +85,71 @@ export function Markdown({ text }: { text: string }) {
   return <div className="markdown">{blocks}</div>;
 }
 
+// ---- Drafts the copilot prepared, for the person to confirm -------------------
+
+function ProposalCard({ proposal, messageId, index }: { proposal: Proposal; messageId: string; index: number }) {
+  const session = useSession();
+  const [busy, setBusy] = useState(false);
+  const { input, status } = proposal;
+
+  if (proposal.kind === "draft_post") {
+    const open = async () => {
+      if (!session) return openLogin();
+      setBusy(true);
+      // For a reply, load the post being answered so the composer can attach to it.
+      const replyTo = input.reply_to ? await getPostByUrl(input.reply_to).catch(() => null) : null;
+      setBusy(false);
+      openComposer(replyTo ?? undefined, input.text ?? "");
+      setProposalStatus(messageId, index, "Opened in the composer. Edit it there and press Post when you're happy.");
+    };
+    return (
+      <div className="proposal">
+        <div className="proposal-kind">{input.reply_to ? "Draft reply" : "Draft post"}</div>
+        <div className="proposal-text">{input.text}</div>
+        <div className="proposal-foot">
+          <span className="muted">{[...(input.text ?? "")].length}/300 · not posted</span>
+          <button className="primary small" onClick={open} disabled={busy}>{session ? "Open in composer" : "Sign in to post"}</button>
+        </div>
+        {status && <div className="proposal-status">{status}</div>}
+      </div>
+    );
+  }
+
+  const accounts = input.accounts ?? [];
+  const create = async () => {
+    if (!session) return openLogin();
+    setBusy(true);
+    try {
+      const result = await createList(input.name ?? "New list", input.description ?? "", accounts);
+      const { rkey } = parseAtUri(result.uri);
+      setProposalStatus(
+        messageId,
+        index,
+        `Created with ${result.added} accounts${result.failed.length ? ` (could not add ${result.failed.join(", ")})` : ""}. View it at https://bsky.app/profile/${session.handle}/lists/${rkey}`,
+      );
+    } catch (err) {
+      setProposalStatus(messageId, index, `Could not create the list: ${err instanceof Error ? err.message : "unknown error"}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="proposal">
+      <div className="proposal-kind">Proposed list</div>
+      <div className="proposal-title">{input.name}</div>
+      {input.description && <div className="muted">{input.description}</div>}
+      <ul className="proposal-accounts">
+        {accounts.map((handle) => <li key={handle}><Link to={`/profile/${handle}`}>@{handle}</Link></li>)}
+      </ul>
+      <div className="proposal-foot">
+        <span className="muted">{accounts.length} accounts · lists are public</span>
+        {!status?.startsWith("Created") && <button className="primary small" onClick={create} disabled={busy}>{busy ? "Creating…" : session ? "Create list" : "Sign in to create"}</button>}
+      </div>
+      {status && <div className="proposal-status"><Markdown text={status} /></div>}
+    </div>
+  );
+}
+
 // ---- The panel --------------------------------------------------------------
 
 export function CopilotPanel() {
@@ -138,7 +205,7 @@ export function CopilotPanel() {
         )}
         {copilot.messages.length === 0 && (
           <div className="copilot-intro">
-            <p>Ask about anything on Bluesky: a post, a person, a topic, or how something works. I look up live public data to answer.</p>
+            <p>Ask about anything on Bluesky: a post, a person, a topic, or how something works. I look things up live and show my sources.</p>
           </div>
         )}
         {copilot.messages.map((message, index) => {
@@ -155,6 +222,13 @@ export function CopilotPanel() {
           return (
             <div key={message.id} className={`bubble assistant ${message.error ? "error" : ""}`}>
               {message.text && <Markdown text={message.text} />}
+              {message.proposals?.map((proposal, n) => <ProposalCard key={n} proposal={proposal} messageId={message.id} index={n} />)}
+              {!waiting && !message.error && message.turn && message.text && (
+                <div className="rate">
+                  <button className={`ghost icon-button ${message.rating === "up" ? "chosen" : ""}`} onClick={() => rateAnswer(message.id, "up")} aria-label="Good answer" aria-pressed={message.rating === "up"} title="Good answer"><Icon name="thumb-up" /></button>
+                  <button className={`ghost icon-button ${message.rating === "down" ? "chosen" : ""}`} onClick={() => rateAnswer(message.id, "down")} aria-label="Bad answer" aria-pressed={message.rating === "down"} title="Bad answer"><Icon name="thumb-down" /></button>
+                </div>
+              )}
               {waiting && (
                 <div className="activity" role="status">
                   <span className="dots"><i /><i /><i /></span>
@@ -206,7 +280,7 @@ export function CopilotPanel() {
             <button type="submit" className="primary icon-button" disabled={!draft.trim()} aria-label="Send"><Icon name="send" /></button>
           )}
         </form>
-        <div className="fine-print">Reads public Bluesky data only. Answers can be wrong; open the linked posts to check.</div>
+        <div className="fine-print">Answers can be wrong; open the linked sources to check. Nothing is posted without your say-so.</div>
       </footer>
     </aside>
   );

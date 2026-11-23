@@ -5,7 +5,7 @@ import type { PostView } from "./atproto";
 interface UiState {
   loginOpen: boolean;
   /** `null` = closed, `{}` = new post, `{ replyTo }` = reply. */
-  composer: { replyTo?: PostView } | null;
+  composer: { replyTo?: PostView; initialText?: string } | null;
 }
 
 let state: UiState = { loginOpen: false, composer: null };
@@ -18,7 +18,7 @@ function set(next: Partial<UiState>) {
 
 export const openLogin = () => set({ loginOpen: true });
 export const closeLogin = () => set({ loginOpen: false });
-export const openComposer = (replyTo?: PostView) => set({ composer: { replyTo } });
+export const openComposer = (replyTo?: PostView, initialText?: string) => set({ composer: { replyTo, initialText } });
 export const closeComposer = () => set({ composer: null });
 
 export function useUi(): UiState {

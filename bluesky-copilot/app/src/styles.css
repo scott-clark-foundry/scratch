@@ -275,3 +275,16 @@ code { background: var(--bg-soft); border-radius: 4px; padding: 1px 5px; font-si
   .copilot-fab { bottom: 72px; right: 14px; }
   .copilot { width: 100vw; border: 0; }
 }
+
+/* ---- Copilot: drafts to confirm, and answer ratings ---- */
+.proposal { border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; margin-top: 10px; display: flex; flex-direction: column; gap: 6px; background: var(--bg); color: var(--text); }
+.proposal-kind { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--accent); }
+.proposal-title { font-weight: 700; }
+.proposal-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.proposal-accounts { margin: 2px 0; padding-left: 18px; columns: 2; font-size: 14px; }
+.proposal-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; }
+.proposal-status { font-size: 13px; color: var(--muted); }
+.rate { display: flex; gap: 2px; margin-top: 4px; opacity: 0.55; }
+.rate:hover, .rate:focus-within { opacity: 1; }
+.rate .icon-button { padding: 5px; font-size: 13px; }
+.rate .chosen { color: var(--accent); }
