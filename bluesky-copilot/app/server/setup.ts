@@ -19,9 +19,6 @@ import { CONFIG_PATH, SKILL_DIR, readConfig, writeConfig } from "./config.js";
 const AGENT_NAME = "Bluesky Copilot";
 const ENVIRONMENT_NAME = "bluesky-copilot";
 
-/** The only hosts the sandbox may reach: the ones scripts/bsky.py calls. */
-const ALLOWED_HOSTS = ["public.api.bsky.app", "api.bsky.app", "plc.directory"];
-
 /** The agent's instructions live in their own file so they can be edited and tested without touching code. */
 const SYSTEM_PROMPT = fs.readFileSync(new URL("./system-prompt.md", import.meta.url), "utf8").trim();
 
@@ -52,12 +49,14 @@ async function main() {
     console.log(`Skill created: ${skill.id}`);
   }
 
-  // 2. Environment. "limited" networking denies every host not listed here.
+  // 2. Environment. The copilot follows the links in posts, which can point at
+  // any website, so the sandbox has open outbound network access. That is why
+  // nothing secret is ever placed in the sandbox: it holds only the skill.
   const environment = {
     name: ENVIRONMENT_NAME,
     config: {
       type: "cloud" as const,
-      networking: { type: "limited" as const, allowed_hosts: ALLOWED_HOSTS },
+      networking: { type: "unrestricted" as const },
     },
   };
   if (config.environmentId) {
@@ -71,8 +70,9 @@ async function main() {
   }
 
   // 3. Agent. It may run commands and read files in its sandbox, which is how
-  // it runs the skill's script. It gets no file-writing or open-web tools:
-  // answering questions needs neither.
+  // it runs the skill's script and looks at downloaded images. It may search
+  // and fetch the web to check claims and read linked pages. It gets no
+  // file-editing tools: answering questions does not need them.
   const agent = {
     name: AGENT_NAME,
     description: "Answers questions about Bluesky inside the Cirrus web app.",
@@ -84,8 +84,8 @@ async function main() {
         type: "agent_toolset_20260401" as const,
         default_config: { enabled: true, permission_policy: { type: "always_allow" as const } },
         configs: [
-          { name: "web_fetch" as const, enabled: false },
-          { name: "web_search" as const, enabled: false },
+          { name: "web_fetch" as const, enabled: true },
+          { name: "web_search" as const, enabled: true },
           { name: "write" as const, enabled: false },
           { name: "edit" as const, enabled: false },
         ],

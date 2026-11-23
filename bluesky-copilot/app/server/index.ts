@@ -77,15 +77,23 @@ function activityLabel(name: string, input: Record<string, unknown>): string {
         "user-lists": "Listing lists made by",
         list: "Reading the list",
         trending: "Checking what is trending",
+        media: "Looking at the pictures in",
+        "read-link": "Reading the linked page",
+        "search-starter-packs": "Searching starter packs for",
+        "starter-pack": "Reading the starter pack",
         resolve: "Resolving the identity of",
         raw: "Calling the Bluesky API:",
       };
       const label = labels[match[1]];
-      if (label) return /post|thread|feed$|list$|trending/.test(match[1]) && !/search|user/.test(match[1]) ? label : `${label} ${arg}`.trim();
+      const bare = ["post", "thread", "feed", "list", "trending", "likes", "reposts", "quotes", "read-link", "starter-pack"];
+      if (label) return bare.includes(match[1]) ? label : `${label} ${arg.replace(/^https:\/\/bsky\.app\/profile\/([^/]+).*/, "@$1")}`.trim();
     }
     return "Running a lookup";
   }
-  if (name === "read" || name === "glob" || name === "grep") return "Checking the Bluesky reference notes";
+  if (name === "read") return /\.(jpe?g|png|webp|gif)$/i.test(String(input.file_path ?? input.path ?? "")) ? "Looking at a picture" : "Checking the Bluesky reference notes";
+  if (name === "glob" || name === "grep") return "Checking the Bluesky reference notes";
+  if (name === "web_search") return `Searching the web for ${String(input.query ?? "").slice(0, 60)}`.trim();
+  if (name === "web_fetch") return "Reading a web page";
   return "Working";
 }
 

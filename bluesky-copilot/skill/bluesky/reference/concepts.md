@@ -1,6 +1,6 @@
 # How Bluesky works
 
-Read this before answering a how-to or concept question. Facts here are the stable ones. Lines marked **Check** name details that change; give the person the linked page instead of asserting a number or a menu path from memory.
+Read this before answering a how-to or concept question. Facts here are the stable ones. Lines marked **Check** name details that change, such as button names and limits. Give the menu path or detail as written here, add that the wording may differ, and include the link on that line when there is one. Do not add numbers or menu paths from memory.
 
 Official sources:
 
@@ -53,6 +53,7 @@ Bluesky is a social app built on the AT Protocol ("atproto"), an open protocol f
 
 - **User list** (curation list): a named set of accounts that can be viewed as a feed.
 - **Moderation list**: a named set of accounts that a person can subscribe to in order to mute or block every member.
+- **Creating a list**: in the official app, open the Lists screen from the main menu, choose "New list", pick "User list" (to follow as a feed) or "Moderation list" (to mute or block), then name it and add accounts by searching for them. Accounts can also be added from a profile's "…" menu → "Add to lists". Lists are public: anyone can see a list and who is on it, and people can see that they were added. **Check** button names in the app.
 - **Starter pack**: a shareable bundle of recommended accounts and feeds for newcomers. Someone opening the link can follow everyone in it at once.
 
 ## Moderation and safety
@@ -62,7 +63,7 @@ Bluesky calls its approach "stackable moderation". Several layers apply at once:
 - **Network moderation**: Bluesky's own moderation team enforces the community guidelines on the Bluesky app: it removes illegal content, labels content, and suspends accounts. Guidelines: https://bsky.social/about/support/community-guidelines
 - **Labels and labelers**: a labeler is a service that attaches labels (for example "spam", "graphic media", or community-defined labels) to accounts and posts. Bluesky runs the default labeler; anyone can run another. A person subscribes to labelers and chooses, per label, whether to hide, warn or show.
 - **Personal controls**:
-  - *Mute*: hides an account's posts from the person who muted. Private; the muted account is not told.
+  - *Mute*: hides an account's posts from the person who muted. Private; the muted account is not told. To mute or block someone, open their profile and use its "…" menu.
   - *Block*: stops both accounts from seeing or interacting with each other in the app. The app does not notify the blocked account and has no "who blocked me" list; a person finds out only by visiting the profile, which shows that they are blocked. Blocks are public records at the protocol level, so third-party tools can list them.
   - *Where to manage them*: Settings → Moderation lists the accounts a person has blocked and muted, their muted words, and their moderation lists. **Check** the menu path in the app.
   - *"Follows you"*: when signed in, a profile shows a "Follows you" badge if that account follows the viewer.
