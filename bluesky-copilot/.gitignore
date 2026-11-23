@@ -1,0 +1,5 @@
+node_modules/
+dist/
+.copilot.json
+.env
+__pycache__/
