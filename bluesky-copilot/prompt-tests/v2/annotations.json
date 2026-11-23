@@ -1,0 +1,94 @@
+{
+  "r1": {
+    "pulse-ai-drama-today": {
+      "verdict": "FAIL",
+      "failure_modes": [
+        "ranked-without-surveying"
+      ],
+      "note": "Agree with the grader. It followed one trend feed and called it 'the big one'. The drama recipe told it to search and pick; it never compared candidates. Fix: survey trending plus two or three searches, compare quote counts, name the top two or three."
+    },
+    "bulwark-trump-communist-article": {
+      "verdict": "FAIL",
+      "failure_modes": [
+        "stale-or-unchecked-current-state"
+      ],
+      "note": "Agree. It used web search only and said the key fact was unreported when Bluesky had carried confirmation for six hours. Fix: a 'check what is true right now' step that requires a Bluesky search before saying something is unconfirmed."
+    },
+    "real-onion-nvidia-huang": {
+      "verdict": "FAIL",
+      "failure_modes": [
+        "stale-or-unchecked-current-state",
+        "general-knowledge-aside"
+      ],
+      "note": "Agree. Right verdict (satire), but it said no real announcement lay behind it, from memory, on the day the real story was the top trend. Also the bracketed 'general knowledge' aside is clutter caused by my sourcing rule."
+    },
+    "real-iowa-lead-plume-article": {
+      "verdict": "FAIL",
+      "failure_modes": [
+        "stale-or-unchecked-current-state",
+        "too-long"
+      ],
+      "note": "Agree. Faithful to a two-day-old article, wrong about today. 166 words is also more than this person needed."
+    },
+    "private-trump-dementia": {
+      "verdict": "FAIL",
+      "failure_modes": [
+        "declined-without-looking",
+        "general-knowledge-aside"
+      ],
+      "note": "Agree, and this one is my prompt's fault: 'do not run lookups before declining' stopped it opening the post, so it could not say what the clip shows. Fix: look at the on-screen post, describe it, decline only the inference."
+    },
+    "follow-middle-east-breaking-news": {
+      "verdict": "PASS",
+      "failure_modes": [
+        "too-long",
+        "general-knowledge-aside"
+      ],
+      "note": "Good picks, checked live. But 144 words and five accounts for a person who asked for 'a good person'; three would do. Bracketed aside again."
+    },
+    "contradiction-kinzinger-hegseth": {
+      "verdict": "PASS",
+      "failure_modes": [
+        "too-long",
+        "narrates-search"
+      ],
+      "note": "Strong research: found the off-Bluesky CNN quote. Too long at 170 words, and it lists its search terms, which the person did not ask for."
+    },
+    "politics-molly-white": {
+      "verdict": "PASS",
+      "failure_modes": [],
+      "note": "Model answer for a stance question: leads with her own label in her own words, three dated quotes with links, states its sample."
+    },
+    "quote-chain-attribution": {
+      "verdict": "PASS",
+      "failure_modes": [],
+      "note": "Exactly right on attribution: 'Nope, the opposite', then who said what at each layer. It even went past my grounding note and found the interviewee's name by reading the article."
+    },
+    "quote-chain-game": {
+      "verdict": "PASS",
+      "failure_modes": [],
+      "note": "Recognized the chain game, traced 27 posts to a deleted start, and found an earlier branch by search without claiming it as the origin."
+    },
+    "quote-chain-whats-the-scandal": {
+      "verdict": "PASS",
+      "failure_modes": [
+        "too-long"
+      ],
+      "note": "Connected a vague chain to the right news story with a primary source and kept allegations marked as such. 165 words; the last paragraph could wait until asked."
+    },
+    "list-alcohol-marker-artists": {
+      "verdict": "PASS",
+      "failure_modes": [
+        "no-confirm-action"
+      ],
+      "note": "Six real, active artists, each with a post to look at, and it flagged an NSFW bio. It could only describe how to make a list by hand; with the new propose_list tool it should offer a one-press card."
+    },
+    "nyt-link-trump-nvidia-blocked": {
+      "verdict": "PASS",
+      "failure_modes": [
+        "too-long"
+      ],
+      "note": "Honest that the page was blocked and careful to separate the poster's gloss from the reporting. 176 words is the longest answer in the round."
+    }
+  }
+}

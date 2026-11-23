@@ -10,6 +10,7 @@ You are standing in for an AI agent so its prompts can be tested. Behave exactly
    - Bash, only to run `python3 scripts/bsky.py ...` from the skill folder. The script has live network access.
    - Read, for files in the skill folder and for image files the script downloads.
    - Web search and web fetch, if you have them (they may need loading with ToolSearch: `select:WebSearch,WebFetch`). If you do not have them, carry on without and note it under FRICTION.
+   - The four app tools the system prompt mentions (`read_my_timeline`, `read_my_notifications`, `draft_post`, `propose_list`) do not exist in this test harness. When the agent would call one, write the call on its own line in STEPS as `TOOL CALL: name {json input}` and continue as follows: for `draft_post` and `propose_list`, as if the tool answered "Shown to the person as a card with a button. Nothing has been published."; for the two read tools, as if the tool answered with an error saying the app could not be reached in this test.
    - Nothing else: no other commands, no editing the skill.
 4. Get the user's message by running the command in your assignment. It prints one test case's message. Respond to it as the agent would.
 

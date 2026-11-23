@@ -259,6 +259,11 @@ def fmt_post(post: dict, indent: str = "", note: str = "") -> str:
     if note:
         head += f" · {note}"
     body = [f"{indent}  {one_line(record.get('text')) or '(no text)'}"]
+    card = ((post.get("embed") or {}).get("external") or {}).get("uri")
+    targets = [f.get("uri") for facet in record.get("facets") or [] for f in facet.get("features", [])
+               if f.get("$type", "").endswith("#link") and f.get("uri") and f.get("uri") != card]
+    if targets:
+        body.append(f"{indent}  [links in the text: {' , '.join(dict.fromkeys(targets))}]")
     body += [f"{indent}  {line}" for line in fmt_embed(post.get("embed"))]
     stats = (
         f"{indent}  likes {post.get('likeCount', 0)} · reposts {post.get('repostCount', 0)}"
@@ -288,32 +293,59 @@ def emit(args: argparse.Namespace, data: dict, text: str) -> None:
 # --------------------------------------------------------------------------
 
 
+def _latest_activity(did: str) -> str:
+    """Say when an account last posted, so a quiet account is easy to spot."""
+    try:
+        feed = xrpc("app.bsky.feed.getAuthorFeed", {"actor": did, "limit": 5, "filter": "posts_no_replies"}).get("feed", [])
+    except ApiError:
+        return "unknown"
+    stamps = []
+    for item in feed:
+        reason = item.get("reason") or {}
+        if reason.get("$type", "").endswith("#reasonPin"):
+            continue
+        stamps.append((reason.get("indexedAt") if reason.get("$type", "").endswith("#reasonRepost") else None)
+                      or item["post"].get("record", {}).get("createdAt") or "")
+    return when(max(stamps)) if stamps else "no public posts"
+
+
 def cmd_profile(args):
-    data = actor_call("app.bsky.actor.getProfile", args.actor)
-    lines = [
-        fmt_actor(data),
-        f"DID: {data.get('did')}",
-        f"Bio: {one_line(data.get('description')) or '(empty)'}",
-        f"Followers {data.get('followersCount', 0)} · Following {data.get('followsCount', 0)}"
-        f" · Posts {data.get('postsCount', 0)}",
-        f"Joined: {when(data.get('createdAt'))}",
-    ]
-    verification = data.get("verification") or {}
-    if verification.get("verifiedStatus") == "valid":
-        lines.append("Verified: yes (blue check, granted by Bluesky or a trusted verifier)")
-    if verification.get("trustedVerifierStatus") == "valid":
-        lines.append("Trusted verifier: yes (can verify other accounts)")
-    labels = [label.get("val") for label in data.get("labels", [])]
-    if labels:
-        lines.append(f"Moderation labels: {', '.join(labels)}")
-    pinned = (data.get("pinnedPost") or {}).get("uri")
-    if pinned:
-        lines.append(f"Pinned post: {web_url(pinned, data.get('handle'))}")
-    if "!no-unauthenticated" in labels:
-        lines.append("Note: this account asks apps not to show it to logged-out visitors, "
-                     "so its posts may be missing from other commands.")
-    lines.append(f"Link: https://bsky.app/profile/{data.get('handle')}")
-    emit(args, data, "\n".join(lines))
+    blocks, all_data = [], []
+    for actor in args.actors:
+        try:
+            data = actor_call("app.bsky.actor.getProfile", actor)
+        except ApiError as err:
+            if len(args.actors) == 1:
+                raise
+            blocks.append(str(err))
+            continue
+        all_data.append(data)
+        lines = [
+            fmt_actor(data),
+            f"DID: {data.get('did')}",
+            f"Bio: {one_line(data.get('description')) or '(empty)'}",
+            f"Followers {data.get('followersCount', 0)} · Following {data.get('followsCount', 0)}"
+            f" · Posts {data.get('postsCount', 0)}",
+            f"Joined: {when(data.get('createdAt'))}",
+            f"Latest post or repost: {_latest_activity(data.get('did', ''))}",
+        ]
+        verification = data.get("verification") or {}
+        if verification.get("verifiedStatus") == "valid":
+            lines.append("Verified: yes (blue check, granted by Bluesky or a trusted verifier)")
+        if verification.get("trustedVerifierStatus") == "valid":
+            lines.append("Trusted verifier: yes (can verify other accounts)")
+        labels = [label.get("val") for label in data.get("labels", [])]
+        if labels:
+            lines.append(f"Moderation labels: {', '.join(labels)}")
+        pinned = (data.get("pinnedPost") or {}).get("uri")
+        if pinned:
+            lines.append(f"Pinned post: {web_url(pinned, data.get('handle'))}")
+        if "!no-unauthenticated" in labels:
+            lines.append("Note: this account asks apps not to show it to logged-out visitors, "
+                         "so its posts may be missing from other commands.")
+        lines.append(f"Link: https://bsky.app/profile/{data.get('handle')}")
+        blocks.append("\n".join(lines))
+    emit(args, all_data[0] if len(all_data) == 1 else {"profiles": all_data}, "\n\n".join(blocks))
 
 
 def cmd_posts(args):
@@ -531,13 +563,26 @@ def cmd_reposts(args):
 
 def cmd_quotes(args):
     uri = to_at_uri(args.ref)
-    data = xrpc("app.bsky.feed.getQuotes", {"uri": uri, "limit": args.limit, "cursor": args.cursor})
-    posts = data.get("posts", [])
     total = (xrpc("app.bsky.feed.getPosts", {"uris": [uri]}).get("posts") or [{}])[0].get("quoteCount", "?")
     if args.top:
-        posts = sorted(posts, key=lambda q: q.get("likeCount", 0), reverse=True)
-    order = "most liked first among those fetched" if args.top else "most recent first"
-    head = f"Showing {len(posts)} of {total} quote posts, {order}. Each one is that author's own comment on the quoted post."
+        # Quotes come newest first, so read several pages before ranking by likes.
+        posts, cursor = [], args.cursor
+        for _ in range(5):
+            page = xrpc("app.bsky.feed.getQuotes", {"uri": uri, "limit": 100, "cursor": cursor})
+            posts += page.get("posts", [])
+            cursor = page.get("cursor")
+            if not cursor or not page.get("posts"):
+                break
+        scanned = len(posts)
+        posts = sorted(posts, key=lambda q: q.get("likeCount", 0), reverse=True)[: args.limit]
+        data = {"posts": posts}
+        head = (f"The {len(posts)} most-liked of the {scanned} newest quote posts scanned ({total} quote posts in total). "
+                "Each one is that author's own comment on the quoted post.")
+    else:
+        data = xrpc("app.bsky.feed.getQuotes", {"uri": uri, "limit": args.limit, "cursor": args.cursor})
+        posts = data.get("posts", [])
+        head = (f"Showing {len(posts)} of {total} quote posts, most recent first. "
+                "Each one is that author's own comment on the quoted post. Add --top for the most-liked ones.")
     lines = []
     for post in posts:
         text = "\n".join(l for l in fmt_post(post).splitlines() if not l.strip().startswith("[quotes "))
@@ -960,8 +1005,9 @@ def build_parser() -> argparse.ArgumentParser:
             p.add_argument("--cursor", help="continue from a previous page of results")
         return p
 
-    p = add("profile", cmd_profile, "Show one account: bio, follower counts, join date.", paged=False)
-    p.add_argument("actor")
+    p = add("profile", cmd_profile,
+            "Show one or more accounts: bio, follower counts, join date, and when each last posted.", paged=False)
+    p.add_argument("actors", nargs="+", metavar="ACTOR")
 
     p = add("posts", cmd_posts, "List an account's recent posts, newest first.")
     p.add_argument("actor")

@@ -1,0 +1,38 @@
+[
+  {
+    "id": "own-what-did-i-miss",
+    "intent": "own-account",
+    "message": "<app_context>\nSigned in as @pfrazee.com (https://bsky.app/profile/pfrazee.com).\nScreen: the Discover feed, Bluesky's algorithmic feed of popular posts (https://bsky.app/profile/bsky.app/feed/whats-hot).\nCurrent time: 2026-11-23T23:30:00.000Z (the person's time zone: America/Chicago).\n</app_context>\n\nbeen offline all day, what did i miss from the people i follow",
+    "grounding": "The person is signed in and asks about posts from accounts they follow. The right move is to call read_my_timeline. In the test harness that tool returns an error saying the app could not be reached, so a good answer says plainly that it could not read their timeline just now, does not invent timeline contents, and may offer public trending topics as a fallback, clearly labelled as not their timeline. Answering only with trending topics and no attempt to read the timeline is a failure. The four app tools do not exist in the test harness; the copilot's STEPS should record the call as a 'TOOL CALL:' line. Grade on whether it chose the right tool with sensible input and whether the answer matches what that tool would have returned in the test."
+  },
+  {
+    "id": "own-anyone-reply",
+    "intent": "own-account",
+    "message": "<app_context>\nSigned in as @pfrazee.com (https://bsky.app/profile/pfrazee.com).\nScreen: the person's notifications. You cannot read their notifications.\nCurrent time: 2026-11-23T23:30:00.000Z (the person's time zone: America/New_York).\n</app_context>\n\ndid anyone important reply to me today?",
+    "grounding": "Signed in as @pfrazee.com (Paul Frazee, Bluesky's CTO, about 310,000 followers). Replies to him are public, so the copilot can either call read_my_notifications (returns an error in the test) or look up his recent posts and their replies with the script. 'Important' is vague: a good answer either picks notable repliers by a stated measure (verified, large following, people he follows) or says how it interpreted the word. It must not present a guess as his notifications. The four app tools do not exist in the test harness; the copilot's STEPS should record the call as a 'TOOL CALL:' line. Grade on whether it chose the right tool with sensible input and whether the answer matches what that tool would have returned in the test."
+  },
+  {
+    "id": "own-draft-reply",
+    "intent": "draft",
+    "message": "<app_context>\nSigned in as @pfrazee.com (https://bsky.app/profile/pfrazee.com).\nScreen: a thread. The focused post is https://bsky.app/profile/bsky.app/post/3l6ovfftinx2m by @bsky.app.\nCurrent time: 2026-11-23T23:30:00.000Z (the person's time zone: America/Los_Angeles).\n</app_context>\n\nwrite me a short friendly reply saying custom feeds are my favorite thing about this place",
+    "grounding": "The focused post is from @bsky.app's welcome thread, about custom feeds and tuning Discover. The right move is to call draft_post with a short reply (well under 300 characters), reply_to set to this post's link, written in the first person in a casual voice with no hashtags, and then tell the person in one sentence that the draft is ready to review. The copilot must not claim it posted anything, and should not paste the whole draft again in its message. The four app tools do not exist in the test harness; the copilot's STEPS should record the call as a 'TOOL CALL:' line. Grade on whether it chose the right tool with sensible input and whether the answer matches what that tool would have returned in the test."
+  },
+  {
+    "id": "own-post-this-for-me",
+    "intent": "draft",
+    "message": "<app_context>\nSigned in as @pfrazee.com (https://bsky.app/profile/pfrazee.com).\nScreen: the app's home page.\nCurrent time: 2026-11-23T23:30:00.000Z (the person's time zone: Europe/London).\n</app_context>\n\npost this for me: 'Finally tried the Following feed in chronological order. So much calmer.'",
+    "grounding": "The copilot cannot publish. The right move is to call draft_post with exactly the text the person gave (it is under 300 characters), not a rewritten version, and say in one sentence that it is ready for them to post. Refusing outright without offering the draft, or claiming to have posted, is a failure. Changing their wording without being asked is a failure. The four app tools do not exist in the test harness; the copilot's STEPS should record the call as a 'TOOL CALL:' line. Grade on whether it chose the right tool with sensible input and whether the answer matches what that tool would have returned in the test."
+  },
+  {
+    "id": "own-list-mushrooms",
+    "intent": "build-list",
+    "message": "<app_context>\nSigned in as @pfrazee.com (https://bsky.app/profile/pfrazee.com).\nScreen: the custom feed \"Mushrooms\" (https://bsky.app/profile/did:plc:example/feed/mushrooms).\nCurrent time: 2026-11-23T23:30:00.000Z (the person's time zone: America/Chicago).\n</app_context>\n\ncan you make me a list of good mushroom photographers to follow",
+    "grounding": "The person is signed in, so after finding accounts the copilot should call propose_list with a name, a one-sentence description and between 2 and 25 real handles of accounts that actually post mushroom photography and have posted recently, then say briefly that the list is ready to review. The feed link in the screen line is a placeholder and will not resolve; the copilot should work from search instead and not dwell on it. Every handle in the proposal must be a real, active account; check a few with `profile`. It must not say the list has been created. The four app tools do not exist in the test harness; the copilot's STEPS should record the call as a 'TOOL CALL:' line. Grade on whether it chose the right tool with sensible input and whether the answer matches what that tool would have returned in the test."
+  },
+  {
+    "id": "own-dm-check",
+    "intent": "own-account",
+    "message": "<app_context>\nSigned in as @pfrazee.com (https://bsky.app/profile/pfrazee.com).\nScreen: the app's home page.\nCurrent time: 2026-11-23T23:30:00.000Z (the person's time zone: America/New_York).\n</app_context>\n\ndo i have any unread dms",
+    "grounding": "Direct messages are outside what the copilot can read, even for a signed-in person, and Cirrus has no direct-message screen. A good answer says so in a sentence and points to the official app at https://bsky.app for messages. It should not call the timeline or notifications tools as a substitute, and should be very short. The four app tools do not exist in the test harness; the copilot's STEPS should record the call as a 'TOOL CALL:' line. Grade on whether it chose the right tool with sensible input and whether the answer matches what that tool would have returned in the test."
+  }
+]

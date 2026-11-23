@@ -16,7 +16,7 @@ import re
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-CHECKS = ["answers-the-question", "grounded", "used-what-was-attached", "calibrated", "fair-and-safe", "useful-in-a-side-panel"]
+CHECKS = ["answers-the-question", "grounded", "used-what-was-attached", "calibrated", "fair-and-safe", "current", "to-the-point", "sourced-and-friendly", "useful-in-a-side-panel"]
 
 
 def load_cases():
