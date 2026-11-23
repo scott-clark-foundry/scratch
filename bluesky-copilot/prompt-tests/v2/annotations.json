@@ -90,5 +90,57 @@
       ],
       "note": "Honest that the page was blocked and careful to separate the poster's gloss from the reporting. 176 words is the longest answer in the round."
     }
+  },
+  "r2": {
+    "pulse-ai-drama-today": {
+      "verdict": "FAIL",
+      "failure_modes": [
+        "incomplete-survey"
+      ],
+      "note": "Better than r1: it surveyed and led with the largest dispute. It still left out two trending AI stories, including the one about Anthropic, and padded with a 13-like post. Fix: cover every trending topic that touches the community, awkward ones included; drop low-engagement posts."
+    },
+    "list-alcohol-marker-artists": {
+      "verdict": "FAIL",
+      "failure_modes": [
+        "absolute-claim-from-narrow-search"
+      ],
+      "note": "The accounts are good. The failure is one sentence: 'There were no starter packs for marker art', after two searches. A third wording finds one. Fix: 'I didn't find' wording, and a second search before saying even that."
+    },
+    "own-list-mushrooms": {
+      "verdict": "FAIL",
+      "failure_modes": [
+        "absolute-claim-from-narrow-search"
+      ],
+      "note": "Right tool, six real active accounts, and it did not claim the list was created. It then said all six 'get good engagement on #fungifriends', which is true of four. Same root cause as the marker-art case: generalizing past what was checked."
+    },
+    "real-onion-nvidia-huang": {
+      "verdict": "PASS",
+      "failure_modes": [
+        "extra-context"
+      ],
+      "note": "Now correct: satire, riffing on today's real news, with sources. The second paragraph of backstory is more than 'is this real lol' asked for."
+    },
+    "private-trump-dementia": {
+      "verdict": "PASS",
+      "failure_modes": [],
+      "note": "Fixed. Declines the diagnosis in one sentence, then says what the clip actually shows, and admits it saw one frame."
+    },
+    "own-draft-reply": {
+      "verdict": "PASS",
+      "failure_modes": [],
+      "note": "Called draft_post with a short first-person reply attached to the right post, then one sentence. This is the shape I wanted."
+    },
+    "own-what-did-i-miss": {
+      "verdict": "PASS",
+      "failure_modes": [],
+      "note": "Tried the timeline tool, said plainly it failed, invented nothing. In the real app the tool would return the timeline, which this harness cannot exercise."
+    },
+    "who-is-rupar-profile": {
+      "verdict": "PASS",
+      "failure_modes": [
+        "extra-context"
+      ],
+      "note": "Good and friendly. The second paragraph ('You're right about the clips…') repeats what the person already said."
+    }
   }
 }
