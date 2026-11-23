@@ -16,7 +16,7 @@ Bluesky is a social app built on the AT Protocol ("atproto"), an open protocol f
 ## Identity
 
 - **Handle**: the name people see, written `@alice.bsky.social`. A handle is a domain name. New accounts get a subdomain of `bsky.social`.
-- **Custom domain handle**: an account can use a domain it controls (`@alice.com`) as its handle. The owner proves control by adding a DNS TXT record at `_atproto.<domain>` containing `did=<their DID>`, or by serving the DID as plain text at `https://<domain>/.well-known/atproto-did`. The setting is under Settings → Account → Handle in the app. This is why a handle that matches a known organization's website is good evidence the account is genuine. Followers, posts and the DID are unaffected by a handle change. **Check** the exact menu path in the app.
+- **Custom domain handle**: an account can use a domain it controls (`@alice.com`) as its handle. The owner proves control by adding a DNS TXT record at `_atproto.<domain>` containing `did=<their DID>`, or by serving the DID as plain text at `https://<domain>/.well-known/atproto-did`. The setting is under Settings → Account → Handle in the app, which shows the account's DID and the exact DNS record to add. DNS changes can take from minutes to a day to spread. This is why a handle that matches a known organization's website is good evidence the account is genuine. Followers, posts and the DID are unaffected by a handle change, and links that use the DID keep working; links that use the old handle may stop working. Official walkthrough: https://bsky.social/about/blog/4-28-2023-domain-handle-tutorial . **Check** the exact menu path in the app.
 - **DID** (decentralized identifier): the permanent ID behind a handle, such as `did:plc:z72i7hdynmk6r22z27h6tvur`. It never changes when the handle changes. Follows, blocks and links between records use DIDs. Most accounts use the `did:plc` method, whose records are kept at https://plc.directory; some use `did:web`, which is tied to a domain.
 - **PDS** (personal data server): the server that stores an account's repository and handles its login. Bluesky runs many PDS hosts under `*.host.bsky.network`; people can also run their own. An account can move to another PDS and keep its DID, followers and posts. `scripts/bsky.py resolve ACTOR` shows which PDS an account uses.
 - **Verification**: a blue check on a profile means Bluesky or an organization Bluesky designated as a "trusted verifier" has verified the account. `scripts/bsky.py profile` prints a verification line when one applies. A custom domain handle is a separate, self-serve signal. **Check** https://bsky.social/about/blog for who can currently be verified and how to request it.
@@ -43,6 +43,10 @@ Bluesky is a social app built on the AT Protocol ("atproto"), an open protocol f
 - **Following**: posts from accounts the person follows, newest first.
 - **Discover**: Bluesky's algorithmic feed.
 - **Custom feeds** ("feed generators"): anyone can publish a feed with its own selection rule, such as a topic, a community or an algorithm. People browse them in the Feeds tab, and can pin feeds so they appear as tabs on Home. `scripts/bsky.py search-feeds TOPIC` finds them; `feed REF` reads one.
+- **Adding a feed**: in the official app, open the feed and use its save or pin control; pinned feeds appear as tabs on Home, and the Feeds screen lists saved ones. **Check** the exact button names in the app.
+- **Tuning Discover**: the "…" menu on a post in Discover has "Show more like this" and "Show less like this". Bluesky treats these as signals, not guarantees.
+- **Making a feed**: the official app has no built-in feed builder. People use third-party tools (search the web for "Bluesky feed builder") or write their own feed generator; developer guide: https://docs.bsky.app/docs/starter-templates/custom-feeds
+- **Trending topics**: Bluesky generates the list and the topic names automatically from current activity. Each topic links to a feed of posts about it.
 - A feed generator returns only a list of post addresses. The app then fetches the posts and applies the reader's own moderation settings, so a feed cannot show someone a post they have blocked or filtered.
 
 ## Lists and starter packs
@@ -59,7 +63,9 @@ Bluesky calls its approach "stackable moderation". Several layers apply at once:
 - **Labels and labelers**: a labeler is a service that attaches labels (for example "spam", "graphic media", or community-defined labels) to accounts and posts. Bluesky runs the default labeler; anyone can run another. A person subscribes to labelers and chooses, per label, whether to hide, warn or show.
 - **Personal controls**:
   - *Mute*: hides an account's posts from the person who muted. Private; the muted account is not told.
-  - *Block*: stops both accounts from seeing or interacting with each other in the app. Blocks are public records, so other tools can list them.
+  - *Block*: stops both accounts from seeing or interacting with each other in the app. The app does not notify the blocked account and has no "who blocked me" list; a person finds out only by visiting the profile, which shows that they are blocked. Blocks are public records at the protocol level, so third-party tools can list them.
+  - *Where to manage them*: Settings → Moderation lists the accounts a person has blocked and muted, their muted words, and their moderation lists. **Check** the menu path in the app.
+  - *"Follows you"*: when signed in, a profile shows a "Follows you" badge if that account follows the viewer.
   - *Muted words and tags*: hide posts containing chosen words or hashtags, optionally for a set period.
   - *Content filters*: per-category settings for adult and graphic content. Adult content is off by default and needs an age-appropriate account.
 - **Reporting**: the "…" menu on any post, account, list or feed has a Report option. Reports go to Bluesky's moderation team, or to another labeler the reporter picks.

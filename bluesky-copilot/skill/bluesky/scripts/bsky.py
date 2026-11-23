@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from datetime import datetime, timezone
 import re
 import sys
 import urllib.error
@@ -98,11 +99,35 @@ def clean_actor(actor: str) -> str:
     return actor.lstrip("@").strip()
 
 
+NOT_FOUND_HINT = (
+    "The handle may be misspelled, the account may be deleted, deactivated or suspended, "
+    "or (for a custom domain) its domain setup may be incomplete. "
+    "Try `search-users` to find the right handle."
+)
+
+
 def resolve_did(actor: str) -> str:
     actor = clean_actor(actor)
     if actor.startswith("did:"):
         return actor
-    return xrpc("com.atproto.identity.resolveHandle", {"handle": actor})["did"]
+    try:
+        return xrpc("com.atproto.identity.resolveHandle", {"handle": actor})["did"]
+    except ApiError as err:
+        if "HTTP 400" in str(err):
+            raise ApiError(f"No account found for '{actor}'. {NOT_FOUND_HINT}") from None
+        raise
+
+
+def actor_call(method: str, actor: str, params: dict | None = None) -> dict:
+    """Call a method that takes an `actor`, with a readable error if the account is missing."""
+    actor = clean_actor(actor)
+    try:
+        return xrpc(method, {"actor": actor, **(params or {})})
+    except ApiError as err:
+        text = str(err)
+        if "Profile not found" in text or "Unable to resolve" in text or "Actor not found" in text:
+            raise ApiError(f"No account found for '{actor}'. {NOT_FOUND_HINT}") from None
+        raise
 
 
 def to_at_uri(ref: str, default_kind: str = "post") -> str:
@@ -149,7 +174,16 @@ def one_line(text: str | None, limit: int = 0) -> str:
 
 
 def when(timestamp: str | None) -> str:
-    return (timestamp or "")[:16].replace("T", " ")
+    """Format an API timestamp as 'YYYY-MM-DD HH:MM UTC'."""
+    if not timestamp:
+        return "unknown time"
+    try:
+        parsed = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        return parsed.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    except ValueError:
+        return timestamp[:16].replace("T", " ") + " UTC"
 
 
 def fmt_actor(actor: dict) -> str:
@@ -225,7 +259,7 @@ def emit(args: argparse.Namespace, data: dict, text: str) -> None:
 
 
 def cmd_profile(args):
-    data = xrpc("app.bsky.actor.getProfile", {"actor": clean_actor(args.actor)})
+    data = actor_call("app.bsky.actor.getProfile", args.actor)
     lines = [
         fmt_actor(data),
         f"DID: {data.get('did')}",
@@ -236,7 +270,7 @@ def cmd_profile(args):
     ]
     verification = data.get("verification") or {}
     if verification.get("verifiedStatus") == "valid":
-        lines.append("Verified: yes (blue check)")
+        lines.append("Verified: yes (blue check, granted by Bluesky or a trusted verifier)")
     if verification.get("trustedVerifierStatus") == "valid":
         lines.append("Trusted verifier: yes (can verify other accounts)")
     labels = [label.get("val") for label in data.get("labels", [])]
@@ -245,22 +279,42 @@ def cmd_profile(args):
     pinned = (data.get("pinnedPost") or {}).get("uri")
     if pinned:
         lines.append(f"Pinned post: {web_url(pinned, data.get('handle'))}")
+    if "!no-unauthenticated" in labels:
+        lines.append("Note: this account asks apps not to show it to logged-out visitors, "
+                     "so its posts may be missing from other commands.")
     lines.append(f"Link: https://bsky.app/profile/{data.get('handle')}")
     emit(args, data, "\n".join(lines))
 
 
 def cmd_posts(args):
-    data = xrpc(
+    data = actor_call(
         "app.bsky.feed.getAuthorFeed",
+        args.actor,
         {
-            "actor": clean_actor(args.actor),
             "limit": args.limit,
             "cursor": args.cursor,
             "filter": args.filter,
             "includePins": "true" if args.include_pins else None,
         },
     )
-    emit(args, data, fmt_feed(data.get("feed", [])))
+    items = data.get("feed", [])
+    fetched = len(items)
+    if args.no_reposts:
+        items = [i for i in items if not (i.get("reason") or {}).get("$type", "").endswith("#reasonRepost")]
+    if args.since or args.until:
+        # A repost counts by when it was reposted; a post by when it was written.
+        def acted_at(item):
+            reason = item.get("reason") or {}
+            stamp = reason.get("indexedAt") if reason.get("$type", "").endswith("#reasonRepost") else None
+            return when(stamp or item["post"].get("record", {}).get("createdAt") or item["post"].get("indexedAt"))
+        items = [i for i in items
+                 if (not args.since or acted_at(i)[:len(args.since)] >= args.since)
+                 and (not args.until or acted_at(i)[:len(args.until)] < args.until)]
+    data["feed"] = items
+    text = fmt_feed(items)
+    if len(items) != fetched:
+        text += f"\n\n({len(items)} of the {fetched} fetched items match your filters.)"
+    emit(args, data, text)
 
 
 def fmt_feed(items: list[dict]) -> str:
@@ -269,7 +323,8 @@ def fmt_feed(items: list[dict]) -> str:
         note = ""
         reason = item.get("reason") or {}
         if reason.get("$type", "").endswith("#reasonRepost"):
-            note = f"reposted by @{reason.get('by', {}).get('handle')}"
+            note = (f"REPOST by @{reason.get('by', {}).get('handle')} at {when(reason.get('indexedAt'))}"
+                    " (the first time shown is when the original was written)")
         elif reason.get("$type", "").endswith("#reasonPin"):
             note = "pinned"
         parent = (item.get("reply") or {}).get("parent") or {}
@@ -296,7 +351,12 @@ def cmd_search_posts(args):
             "tag": args.tag,
         },
     )
-    emit(args, data, "\n\n".join(fmt_post(post) for post in data.get("posts", [])))
+    posts = data.get("posts", [])
+    text = "\n\n".join(fmt_post(post) for post in posts)
+    if posts:
+        text += f"\n\n({len(posts)} posts shown. Search matches any post containing these words; " \
+                "put a phrase in double quotes to require it exactly.)"
+    emit(args, data, text)
 
 
 def cmd_search_users(args):
@@ -314,13 +374,15 @@ def cmd_post(args):
 
 
 def cmd_thread(args):
+    root_uri = to_at_uri(args.ref)
     data = xrpc(
         "app.bsky.feed.getPostThread",
-        {"uri": to_at_uri(args.ref), "depth": args.depth, "parentHeight": args.parents},
+        {"uri": root_uri, "depth": args.depth, "parentHeight": args.parents},
     )
     thread = data.get("thread", {})
     if "post" not in thread:
         raise ApiError("That post is deleted, blocked, or not visible without a login.")
+    author_did = thread["post"].get("author", {}).get("did")
 
     blocks = []
     ancestors = []
@@ -332,16 +394,45 @@ def cmd_thread(args):
         blocks.append(fmt_post(post, note="earlier in the thread"))
     blocks.append(fmt_post(thread["post"], note="THE POST YOU ASKED ABOUT"))
 
+    # Authors often continue a post by replying to themselves. Follow that chain
+    # first, fetching more levels as needed, so a long self-thread is not cut off.
+    def own_reply(node):
+        mine = [r for r in node.get("replies") or []
+                if r.get("post", {}).get("author", {}).get("did") == author_did]
+        return min(mine, key=lambda r: r["post"].get("record", {}).get("createdAt", "")) if mine else None
+
+    chain_uris = set()
+    node, steps = thread, 0
+    while steps < args.max_chain:
+        nxt = own_reply(node)
+        if nxt is None and node is not thread and node["post"].get("replyCount", 0) and not node.get("replies"):
+            # Reached the fetched depth: fetch the next levels from here.
+            more = xrpc("app.bsky.feed.getPostThread",
+                        {"uri": node["post"]["uri"], "depth": args.depth, "parentHeight": 0}).get("thread", {})
+            nxt = own_reply(more)
+        if nxt is None:
+            break
+        steps += 1
+        chain_uris.add(nxt["post"]["uri"])
+        blocks.append(fmt_post(nxt["post"], note=f"SAME AUTHOR CONTINUES, part {steps + 1}"))
+        node = nxt
+
+    blocks.append(
+        f"--- Replies from other people to the post you asked about (it has "
+        f"{thread['post'].get('replyCount', 0)} direct replies in total; "
+        f"showing up to {args.max_replies} per level, most liked first) ---"
+    )
+
     def walk(replies, level):
-        ordered = sorted(replies, key=lambda r: r.get("post", {}).get("likeCount", 0), reverse=True)
+        others = [r for r in replies if "post" in r and r["post"]["uri"] not in chain_uris]
+        ordered = sorted(others, key=lambda r: r["post"].get("likeCount", 0), reverse=True)
         for reply in ordered[: args.max_replies]:
-            if "post" not in reply:
-                continue
             blocks.append(fmt_post(reply["post"], indent="    " * level, note=f"reply, level {level}"))
-            walk(reply.get("replies") or [], level + 1)
+            if level < args.reply_levels:
+                walk(reply.get("replies") or [], level + 1)
         hidden = len(ordered) - args.max_replies
         if hidden > 0:
-            blocks.append(f"{'    ' * level}(+{hidden} more replies at this level, fewer likes)")
+            blocks.append(f"{'    ' * level}(+{hidden} more fetched replies at this level, with fewer likes)")
 
     walk(thread.get("replies") or [], 1)
     emit(args, data, "\n\n".join(blocks))
@@ -353,11 +444,11 @@ def _people(args, method: str, key: str, id_param: str, ident: str, actor_of=lam
 
 
 def cmd_followers(args):
-    _people(args, "app.bsky.graph.getFollowers", "followers", "actor", clean_actor(args.actor))
+    _people(args, "app.bsky.graph.getFollowers", "followers", "actor", resolve_did(args.actor))
 
 
 def cmd_follows(args):
-    _people(args, "app.bsky.graph.getFollows", "follows", "actor", clean_actor(args.actor))
+    _people(args, "app.bsky.graph.getFollows", "follows", "actor", resolve_did(args.actor))
 
 
 def cmd_likes(args):
@@ -419,7 +510,7 @@ def cmd_search_feeds(args):
 def cmd_user_feeds(args):
     data = xrpc(
         "app.bsky.feed.getActorFeeds",
-        {"actor": clean_actor(args.actor), "limit": args.limit, "cursor": args.cursor},
+        {"actor": resolve_did(args.actor), "limit": args.limit, "cursor": args.cursor},
     )
     emit(args, data, "\n\n".join(fmt_generator(feed) for feed in data.get("feeds", [])))
 
@@ -427,7 +518,7 @@ def cmd_user_feeds(args):
 def cmd_user_lists(args):
     data = xrpc(
         "app.bsky.graph.getLists",
-        {"actor": clean_actor(args.actor), "limit": args.limit, "cursor": args.cursor},
+        {"actor": resolve_did(args.actor), "limit": args.limit, "cursor": args.cursor},
     )
     lines = []
     for item in data.get("lists", []):
@@ -453,9 +544,11 @@ def cmd_list(args):
 
 def cmd_trending(args):
     data = xrpc("app.bsky.unspecced.getTrendingTopics", {"limit": args.limit})
-    lines = ["Trending now:"]
-    lines += [f"  {t.get('displayName') or t.get('topic')} — https://bsky.app{t.get('link', '')}"
-              for t in data.get("topics", [])]
+    lines = ["Trending now, highest first:"]
+    lines += [f"  {n}. {t.get('displayName') or t.get('topic')} — https://bsky.app{t.get('link', '')}"
+              for n, t in enumerate(data.get("topics", []), 1)]
+    lines.append("Each link is a feed of posts on that topic. To learn why a topic is trending, "
+                 "read it with: feed LINK --limit 10")
     if data.get("suggested"):
         lines.append("Suggested topics:")
         lines += [f"  {t.get('displayName') or t.get('topic')} — https://bsky.app{t.get('link', '')}"
@@ -506,7 +599,8 @@ def cmd_raw(args):
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="bsky.py",
-        description="Read public Bluesky data: profiles, posts, threads, search, feeds, trends.",
+        description="Read public Bluesky data: profiles, posts, threads, search, feeds, trends. "
+                    "All times are printed in UTC. In post text, ⏎ marks a line break.",
         epilog="An ACTOR is a handle (alice.bsky.social), a DID, or a profile link. "
                "A post, feed or list REF is a https://bsky.app/… link or an at:// URI.",
     )
@@ -530,8 +624,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--filter", default="posts_and_author_threads",
                    choices=["posts_with_replies", "posts_no_replies", "posts_with_media",
                             "posts_and_author_threads", "posts_with_video"],
-                   help="which posts to include (default: posts plus the author's own threads)")
+                   help="which posts to include (default: posts, reposts and the author's replies to themselves)")
     p.add_argument("--include-pins", action="store_true", help="put the pinned post first")
+    p.add_argument("--no-reposts", action="store_true", help="leave out reposts; show only what the account wrote")
+    p.add_argument("--since", metavar="YYYY-MM-DD", help="only items on or after this UTC date (or 'YYYY-MM-DD HH:MM')")
+    p.add_argument("--until", metavar="YYYY-MM-DD", help="only items before this UTC date (or 'YYYY-MM-DD HH:MM')")
 
     p = add("search-posts", cmd_search_posts, "Search all public posts.")
     p.add_argument("query", help='search text; use "quotes" for an exact phrase')
@@ -551,12 +648,16 @@ def build_parser() -> argparse.ArgumentParser:
     p = add("post", cmd_post, "Show one or more posts with their like, repost and reply counts.", paged=False)
     p.add_argument("refs", nargs="+", metavar="REF")
 
-    p = add("thread", cmd_thread, "Show a post with the posts above it and the replies below it.", paged=False)
+    p = add("thread", cmd_thread, "Show a post, the posts above it, the author's own continuation, and other people's top replies.", paged=False)
     p.add_argument("ref")
-    p.add_argument("--depth", type=int, default=3, help="levels of replies to fetch (default 3)")
+    p.add_argument("--depth", type=int, default=3, help="levels of replies to fetch per request (default 3)")
     p.add_argument("--parents", type=int, default=10, help="earlier posts to fetch (default 10)")
     p.add_argument("--max-replies", type=int, default=8,
-                   help="replies to print per level, most liked first (default 8)")
+                   help="other people's replies to print per level, most liked first (default 8)")
+    p.add_argument("--reply-levels", type=int, default=2,
+                   help="how deep to print other people's replies (default 2: replies and replies to them)")
+    p.add_argument("--max-chain", type=int, default=30,
+                   help="most posts to follow when the author continues their own thread (default 30)")
 
     for name, func, text in [
         ("followers", cmd_followers, "List accounts that follow ACTOR."),

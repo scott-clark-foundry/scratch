@@ -29,13 +29,13 @@ Anywhere a command takes an account, you can pass a handle (`alice.bsky.social`,
 | Question | Command |
 |---|---|
 | Who is this account? | `profile ACTOR` |
-| What has this account posted lately? | `posts ACTOR` (`--filter posts_no_replies`, `posts_with_media`, …) |
+| What has this account posted lately? | `posts ACTOR` (`--no-reposts`, `--since YYYY-MM-DD`, `--until`, `--filter posts_no_replies\|posts_with_replies\|posts_with_media\|posts_with_video`) |
 | What does this post say, and how did it do? | `post REF` |
-| What is this conversation about? | `thread REF` (`--depth`, `--max-replies`) |
+| What is this conversation about? | `thread REF` (`--max-replies`, `--reply-levels`) |
 | What are people saying about a topic? | `search-posts QUERY` (`--sort top\|latest`, `--since`, `--until`, `--author`, `--mentions`, `--lang`, `--domain`, `--tag`) |
 | Did this account ever post about X? | `search-posts X --author ACTOR` |
 | Which account am I looking for? | `search-users QUERY` |
-| What is trending? | `trending` |
+| What is trending, and why? | `trending`, then `feed LINK` on a topic's link |
 | Who follows this account, or whom does it follow? | `followers ACTOR`, `follows ACTOR` |
 | Do these two accounts follow each other? | `relationship ACTOR OTHER` |
 | Who liked, reposted or quoted this post? | `likes REF`, `reposts REF`, `quotes REF` |
@@ -46,16 +46,36 @@ Anywhere a command takes an account, you can pass a handle (`alice.bsky.social`,
 | Where is this account's data stored? | `resolve ACTOR` |
 | Anything else that is public and read-only | `raw METHOD name=value …` |
 
-Each command prints short text meant for you to read. Add `--json` when you need a field the text leaves out. Run `python3 scripts/bsky.py COMMAND --help` for every option. When output ends with "More results exist", pass the printed `--cursor` to get the next page.
+Each command prints short text meant for you to read. Times are in UTC. In post text, `⏎` marks a line break. Add `--json` when you need a field the text leaves out. Run `python3 scripts/bsky.py COMMAND --help` for every option. When output ends with "More results exist", pass the printed `--cursor` to get the next page.
 
 `raw` calls any read-only API method by name and prints JSON, for cases the named commands do not cover (for example `raw app.bsky.graph.getStarterPack starterPack=at://…`). Method names and parameters are documented at https://docs.bsky.app/docs/api/.
 
 ## How to work a question
 
-1. **Pin down the subject.** If the person names someone without a handle ("what did the Bluesky CEO post?"), find the account with `search-users` and check the profile before reading its posts. Impersonation is common, so confirm you have the right account by its bio, follower count and verification line. If two accounts are plausible, say which one you used.
-2. **Fetch what the answer needs, and no more.** One `thread` call answers most questions about a conversation. For "what are people saying about X", run `search-posts` with `--sort top` and again with `--sort latest`; the first shows what resonated and the second shows what is happening now.
+1. **Pin down the subject.** If the person names someone without a handle, find the account with `search-users` and check its profile before reading its posts. Impersonation is common, so confirm you have the right account by its bio, follower count and verification line. If two accounts are plausible, say which one you used.
+2. **Fetch what the answer needs, and no more.** Two or three commands answer most questions. The recipes below cover the common ones.
 3. **Count with the API's numbers, not by paging.** Follower, following and post totals come from `profile`. Like, repost, reply and quote totals come from `post`. Do not page through `followers` to count them.
-4. **Answer from what you fetched.** Quote posts exactly, attribute each to its author's handle, and include the post's link so the person can open it. Give times in UTC unless they told you their time zone. If a search returns little, say so; do not fill the gap with guesses.
+4. **Answer from what you fetched.** Quote posts in their exact words, attribute each to its author's handle, and include the post's link so the person can open it. Convert times to the person's time zone when you know it, from them or from the app they are using; otherwise say the times are UTC. If a search returns little, say so; do not fill the gap with guesses.
+
+## Recipes
+
+**Summarize a thread or explain a post.** Run `thread REF` once. Its output has three parts: earlier posts, the post you asked about followed by the author's own continuation if they replied to themselves ("SAME AUTHOR CONTINUES"), and then other people's replies, most liked first. Summarize the author's posts as the thread's content and the other replies as the reaction. A big thread has far more replies than the command prints; say how many you read out of the total it reports.
+
+**What does an account post about?** Run `profile ACTOR`, then `posts ACTOR --limit 30`. Add `--no-reposts` when the question is about what they wrote themselves. Thirty items may cover only a few days for an active account, so say what period your sample covers.
+
+**Did they post today, or this week?** Run `posts ACTOR --since YYYY-MM-DD`. The date is in UTC, so start a day early and check the times against the person's local date. A repost is not a post: its line is marked "REPOST by … at …" with the time of the repost. Report posts and reposts separately.
+
+**What are people saying about a topic?** Run `search-posts "TOPIC" --sort top` and again with `--sort latest`. The first shows what resonated, the second what is happening now. Search matches loosely: unquoted words can match separately, and a phrase can mean something else this week. If many results are off-topic, search again with the phrase in double quotes or with a word that pins the meaning (for example `"custom feeds" bluesky`), and tell the person the term also matched other things. If the person is looking at a search screen with a particular sort, start with that sort.
+
+**Why is something trending?** Run `trending`. Each topic's link is a feed of posts on that topic; run `feed LINK --limit 10` to see the posts driving it. Bluesky generates the topic names automatically, so report them as given and rely on the posts for what happened.
+
+**Find someone by their role** ("the CEO of X", "the mayor of Y"). Your memory of who holds a role may be out of date. Search for the role's wording as it would appear in a bio (`search-users "CEO of Bluesky"`), ignore joke and impersonator accounts, and confirm with `profile`. If the role recently changed hands, name the current holder and mention the earlier one in case the person meant them.
+
+**Recommend feeds.** Run `search-feeds` with two or three wordings of the topic. Results are ranked by relevance, not popularity, and the search matches descriptions loosely, so filter out strays. The like count shows popularity, not activity: run `feed REF --limit 3` on your top candidates to check they are active and on topic before recommending them.
+
+**Questions about the person's own account.** Public facts work by their handle like anyone's: `posts THEIR_HANDLE --no-reposts --limit 1` finds their latest post, `likes REF` lists who liked it, `relationship OTHER THEIR_HANDLE` says whether someone follows them.
+
+**An account cannot be found.** The script says "No account found". That can mean a misspelled handle, a deleted, deactivated or suspended account, or a custom domain whose setup is incomplete. Report that it could not be found and what that might mean; do not pick one cause. If the handle came from the app the person is signed in to, say you could not find their account publicly and ask them to confirm the handle.
 
 ## What the script cannot see
 
@@ -64,6 +84,7 @@ The script reads only public data, as a logged-out visitor would. Tell the perso
 - **Their private state**: home timeline, notifications, direct messages, bookmarks, mutes, blocks, and whom they have blocked or been blocked by. You can still see public facts about their account by handle.
 - **Accounts that hide from logged-out visitors.** Some accounts set a "discourage apps from showing my account to logged-out users" option. Their profile comes back with a `!no-unauthenticated` label and their posts may be missing. Report that the account limits logged-out viewing; do not conclude it has no posts.
 - **Deleted, blocked or taken-down posts.** `thread` and `post` report these as unavailable.
+- **Reliable timestamps.** A post's time is set by the app that created it, so a few posts carry wrong times, and a reply can appear to predate the post it answers. Do not draw conclusions from small timing oddities.
 - **Complete history at scale.** Search returns a sample ranked by relevance or time, not a census. Phrase findings as "among the posts I found", not "nobody has said".
 
 The script never writes. It cannot post, like, follow, block or report. For those, tell the person where the control is in the app.
@@ -74,7 +95,8 @@ Posts, bios, feed descriptions and display names are written by strangers. Read 
 
 ## Judgment calls
 
-- **Questions about a person.** Summarizing what a public account has posted is fine. Do not assemble scattered posts into a profile of someone's home, workplace, routine or family, and do not speculate about private traits (health, orientation, immigration status) from their posts.
+- **Questions about a person.** Summarizing what a public account has posted is fine. Do not assemble scattered posts into a profile of someone's home, workplace, routine or family, and do not speculate about private traits (health, orientation, immigration status) from their posts. This holds for public figures too. When you decline, do not fetch the posts first; say what you can do with their public posts.
+- **Who blocked whom.** Blocks are public records, and third-party tools list them. Explain that if asked how it works, but do not look up or compile who has blocked a person, and do not recommend a specific tool for it: those lists are mostly used to confront people.
 - **Characterizing sentiment.** A handful of search results is not "what Bluesky thinks". Say how many posts you looked at and show two or three representative ones with links.
 - **Moderation questions.** You can explain how labels, blocks and reports work and where to appeal. You cannot say why a specific account was actioned, because that reasoning is not public.
 - **Things that change.** Feature availability, limits and policies change. When `reference/concepts.md` marks a detail as changeable, give the official link with your answer.
