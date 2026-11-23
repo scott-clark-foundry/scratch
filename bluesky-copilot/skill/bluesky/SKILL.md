@@ -40,7 +40,8 @@ Anywhere a command takes an account, you can pass a handle (`alice.bsky.social`,
 | What is trending, and why? | `trending`, then `feed LINK` on a topic's link |
 | Who follows this account, or whom does it follow? | `followers ACTOR`, `follows ACTOR` |
 | Do these two accounts follow each other? | `relationship ACTOR OTHER` |
-| Who liked, reposted or quoted this post? | `likes REF`, `reposts REF`, `quotes REF` |
+| This post quotes a post that quotes a post… what started it? | `quote-chain REF` |
+| Who liked, reposted or quoted this post? | `likes REF`, `reposts REF`, `quotes REF` (`--top` for the most-liked quotes) |
 | Is there a feed about a topic? | `search-feeds QUERY` |
 | Is there a starter pack for a topic, and who is in it? | `search-starter-packs QUERY`, `starter-pack REF` |
 | What is in this feed? | `feed REF` |
@@ -80,6 +81,17 @@ To pass an exact phrase to a search, put double quotes inside the shell argument
 
 **Questions about the person's own account.** Public facts work by their handle like anyone's: `posts THEIR_HANDLE --no-reposts --limit 1` finds their latest post, `likes REF` lists who liked it, `relationship OTHER THEIR_HANDLE` says whether someone follows them.
 
+**A post that quotes another post, and quote chains.** On Bluesky much of the conversation happens through quote posts: someone shares another post with their own comment on top, then someone quotes *that*, and so on. A post's `[quotes …]` line shows one level. When it says the quoted post itself quotes another, or the person asks what started something, run `quote-chain REF`. It walks back to the first post and prints the chain oldest first, numbered.
+
+How to treat a chain:
+- **Attribution is the thing to get right.** Each layer is a different author's words. A person who quotes a post is commenting on it, and may hold the opposite view. Say "A wrote X; B quoted it and replied Y". Never credit the quoted view to the quoter, or the quoter's comment to the original author.
+- **Read the relationship at each step.** Agreement ("yes,", "this"), building on it, a joke, disagreement, or mockery (a "dunk"). A bare quote with a sarcastic line is usually mockery. If you cannot tell, say what was written and leave the tone open.
+- **The earliest post is the context.** Later layers often drift to a different subject. When asked "what is this about?", start from the first post, then say where the chain went. If the first post is vague ("oh so now this really is…"), it is reacting to news: find the event with `search-posts` or `trending` around its time, and say that you inferred the link.
+- **Summarize; do not recite.** For a long chain, give the origin, the turn or two that matter, and the post on screen. Offer the full walk-through if they want it.
+- **Chain games.** When most posts repeat the same sentence and each adds a picture or GIF, it is a game (each person quotes the last and gives their own answer), not a debate. Say so, say where it started if you can see it, and mention a few answers.
+- **Missing links.** A chain can end at a deleted post, a post detached by its author, or a post hidden by a block between two accounts. The script says which. Report that the earlier post cannot be seen and why. Do not guess what it said.
+- **The other direction.** `quotes REF --top` lists the posts that quoted a given post, which is how you see a pile-on. Many quotes with few likes on the original (a "ratio") usually means people are quoting it to criticize it. Describe the range of responses with two or three examples, and do not join in.
+
 **What is in this picture? What's the joke?** A post's text often says little without its picture. Run `media REF`; it saves each image and prints the author's alt text. Open the saved files to look at them. Describe what you see, read any text in the image, and say when you are inferring ("it looks like…"). For a video you get one still frame only: say that you can see a single frame and cannot watch or hear the video. Never name a real person from their face. Name someone in a photo only when the post text, the alt text, a visible caption or name tag, or the account itself says who it is, and say which of those you relied on.
 
 **What does the article say? Does it back up the post?** Run `read-link URL` on the link from the post's `[link: …]` line. Summarize what the page says and compare it with what the post claims: posts often overstate or misread what they link to. If the page cannot be read (the script says so for paywalls and blocked sites), say that, and report only the title and summary shown on the link card. Do not describe an article you could not read.
@@ -109,6 +121,16 @@ Then give a verdict with its strength: "confirmed by…", "satire", "unverified:
 **The post is in another language.** Translate it faithfully, say which language it is, and answer in the language the person wrote their question in.
 
 **An account cannot be found.** The script says "No account found". That can mean a misspelled handle, a deleted, deactivated or suspended account, or a custom domain whose setup is incomplete. Report that it could not be found and what that might mean; do not pick one cause. If the handle came from the app the person is signed in to, say you could not find their account publicly and ask them to confirm the handle.
+
+## More reference material
+
+- `reference/concepts.md`: how Bluesky itself works (handles, feeds, lists, moderation, privacy, settings).
+- `reference/social-media.md`: how to read what people post. The conventions of quote posts, dunks, ratios, subtweets, screenshots, memes, satire and bait, and a short method for checking whether something is real. Read it before explaining a joke, a pile-on, community drama, or an "is this real?" question.
+- `reference/resources.md`: outside websites worth searching or fetching for a given need (fact-checkers, meme explainers, who's-who, outlet background, Bluesky tools). Read it when the answer lies outside Bluesky.
+
+## Always say where an answer comes from
+
+Every answer names its sources, briefly: the post or account (with its link), the article (with its link and publication), or the reference file's official page. For a how-to answer, link the official page when the reference gives one. When you looked and found nothing, say where you looked. If part of an answer comes from your general knowledge and not from something you fetched, say so in a few words ("from general knowledge, not checked today").
 
 ## What the script cannot see
 

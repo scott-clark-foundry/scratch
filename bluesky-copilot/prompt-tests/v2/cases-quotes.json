@@ -1,0 +1,26 @@
+[
+  {
+    "id": "quote-chain-game",
+    "intent": "quote-chain",
+    "message": "<app_context>\nNot signed in.\nScreen: a thread. The focused post is https://bsky.app/profile/crobertcargill.bsky.social/post/3n2w7ch4akc2k by @crobertcargill.bsky.social.\nCurrent time: 2026-11-23T22:40:00.000Z (the person's time zone: America/Chicago).\n</app_context>\n\nwhy is everyone quote posting the same sentence?? where did this start",
+    "grounding": "The focused post by @crobertcargill.bsky.social (C. Robert Cargill) is one link in a quote chain 27 posts deep. Every post repeats the text 'Bluesky is a town and we all have a job here. What is yours?' and each person adds their own answer as a GIF, image or video. It is a chain game, not an argument. The script's default follows 20 posts back; with a higher --max-depth the chain reaches @doyleinstitute.bsky.social on 2026-11-19 16:07 UTC, whose post quotes a post that has since been deleted, so the true origin cannot be seen. A good answer explains the game, says how far back it could trace and that the first post is gone, and does not invent an originator."
+  },
+  {
+    "id": "quote-chain-whats-the-scandal",
+    "intent": "quote-chain",
+    "message": "<app_context>\nSigned in as @pfrazee.com (https://bsky.app/profile/pfrazee.com).\nScreen: the Discover feed, Bluesky's algorithmic feed of popular posts (https://bsky.app/profile/bsky.app/feed/whats-hot).\nCurrent time: 2026-11-23T22:40:00.000Z (the person's time zone: America/New_York).\nThe person tapped \"ask the copilot\" on this post, so their question is about it: https://bsky.app/profile/mcopelov.bsky.social/post/3n2yhyg5wyc25 by @mcopelov.bsky.social.\n</app_context>\n\nwhat scandal are they all talking about? i feel like im missing the start of this",
+    "grounding": "The tapped post by Mark Copelovitch ('There are no conservatives left in the current Republican Party…') is 5th in a quote chain: BeijingPalmer ('oh so now this really is the biggest national security scandal in American history', 14:27 UTC) → Elizabeth N. Saunders agrees → Radley Balko says the president pressured a private company to reinstall a disgraced CEO 'caught in a ChiCom honey trap' → Raven Onthill asks where the conservatives are → Copelovitch. None of the posts names the company; it is the Nvidia / Jensen Huang story trending the same day ('Nvidia rehires Huang', 'Alice Huang espionage allegations'). A good answer walks the chain back, attributes each line to its author, connects it to the trending story with a source, and marks the commentators' characterizations (such as 'honey trap') as their claims, not established fact."
+  },
+  {
+    "id": "quote-chain-attribution",
+    "intent": "quote-chain",
+    "message": "<app_context>\nNot signed in.\nScreen: a thread. The focused post is https://bsky.app/profile/jamellebouie.net/post/3n2w5tuh3zk2o by @jamellebouie.net.\nCurrent time: 2026-11-23T22:40:00.000Z (the person's time zone: America/Los_Angeles).\n</app_context>\n\nwait so is jamelle saying trump doesnt look under the hood with hegseth? what was the original thing",
+    "grounding": "Jamelle Bouie's post ('yes, the reason why trump will never remove hegseth is that hegseth will unhesitatingly give the order to shoot americans') is 4th in a chain: Isaac Chotiner posts his New Yorker interview 'The Former Trump Official Who Thinks Trump's Staff Has Let Him Down' → LOLGOP says the interviewee 'thinks Trump doesn't look under the hood, especially with Hegseth' and disagrees → Andy Craig argues Hegseth was appointed for his record seeking pardons for war criminals → Bouie agrees with Craig. So the 'doesn't look under the hood' view belongs to the interviewed former official, as paraphrased by LOLGOP; Bouie holds the opposite view. The New Yorker page may be paywalled. A good answer says no, corrects the attribution, and names the original as Chotiner's interview."
+  },
+  {
+    "id": "quote-chain-blocked-origin",
+    "intent": "quote-chain",
+    "message": "<app_context>\nSigned in as @pfrazee.com (https://bsky.app/profile/pfrazee.com).\nScreen: a thread. The focused post is https://bsky.app/profile/jamellebouie.net/post/3n2wtbgut7224 by @jamellebouie.net.\nCurrent time: 2026-11-23T22:40:00.000Z (the person's time zone: Europe/London).\n</app_context>\n\nwhats he responding to here? i cant see the original post",
+    "grounding": "This post by Jamelle Bouie quotes another post, which in turn quotes a post that is hidden by a block between two of the accounts, so the start of the chain cannot be read by the script. A good answer shows what can be seen (the post Bouie directly quotes), says plainly that the earlier post is hidden because of a block and that it cannot see it, and does not guess what the hidden post said."
+  }
+]

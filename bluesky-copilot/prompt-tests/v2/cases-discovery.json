@@ -1,0 +1,74 @@
+[
+  {
+    "id": "follow-middle-east-breaking-news",
+    "intent": "who-to-follow",
+    "message": "<app_context>\nNot signed in.\nScreen: the Discover feed, Bluesky's algorithmic feed of popular posts (https://bsky.app/profile/bsky.app/feed/whats-hot).\nCurrent time: 2026-11-23T21:59:00.000Z (the person's time zone: Europe/London).\n</app_context>\n\nWho is a good person to follow for breaking news in the Middle East?",
+    "grounding": "Real, active options found: @aljazeera.com (Al Jazeera English, verified, ~230k followers, posting many times an hour on 2026-11-23) and @ruthmichaelson.com (Observer/Guardian Middle East correspondent in Turkey, verified, ~7.9k followers, active this week). Traps: @glcarlstrom.bsky.social (Gregg Carlstrom, The Economist's Middle East correspondent, ~13.9k followers) looks ideal but has not posted since June 2025; @middle-east-eye.bsky.social calls itself the official Middle East Eye account but has 0 posts; AP's @bmroue.bsky.social has only 319 followers and last posted Feb 2026. Curated sets exist: the 'Middle East News and Commentary' starter packs Part 1-3 by @nickjbrumfield.bsky.social (Part 1 has 150 accounts, mostly analysts/academics, created Nov 2024) and 'Middle East analysts' by @willtodman.bsky.social (CSIS). A good answer recommends active accounts and does not pass off stale or empty ones; 'breaking news' leans toward outlets and correspondents more than analysts."
+  },
+  {
+    "id": "follow-f1-journalists-not-fan-account",
+    "intent": "who-to-follow",
+    "message": "<app_context>\nSigned in as @pfrazee.com (https://bsky.app/profile/pfrazee.com).\nScreen: a thread. The focused post is https://bsky.app/profile/f1tv.bsky.social/post/3n2uyb3oiys2u by @f1tv.bsky.social.\nCurrent time: 2026-11-23T21:59:00.000Z (the person's time zone: Asia/Tokyo).\n</app_context>\n\nwho shld i follow for f1 news? like actual journalists not just race highlight accounts",
+    "grounding": "The focused post (2026-11-22 06:26 UTC) says 'MAX VERSTAPPEN WINS THE LAS VEGAS GRAND PRIX!' with an image and no alt text. @f1tv.bsky.social is named 'Formula 1' with ~54k followers, but its bio ends with the word 'unofficial', so it is a fan account, not F1 itself. Active real F1 journalists found: @chrismedlandf1.bsky.social (Chris Medland, freelance for Racer/SiriusXM/Motor Sport, ~22k followers, posted on 2026-11-22 that Rafael Camara will race for Haas in Qatar and Abu Dhabi) and @thomasmaheronf1.bsky.social (Thomas Maher, PlanetF1 editor, ~9k followers, active mid-November). @noblef1.bsky.social (Jon Noble) exists but has 5 posts and has been silent since March 2025. Starter packs exist, e.g. 'Formula 1 | Starter Pack' by @f1tv.bsky.social (2024) and one by @josephbienkahn.com. Next race is the Qatar GP this week."
+  },
+  {
+    "id": "pulse-ai-drama-today",
+    "intent": "community-pulse",
+    "message": "<app_context>\nSigned in as @pfrazee.com (https://bsky.app/profile/pfrazee.com).\nScreen: the search page, showing trending topics.\nCurrent time: 2026-11-23T21:59:00.000Z (the person's time zone: America/Los_Angeles).\n</app_context>\n\nWhat's the drama in the bluesky AI community today?",
+    "grounding": "Several AI fights were live on 2026-11-23. Trending: 'AI sell-off overshadows Anthropic IPO' (posts from AFL-CIO head @lizshuler.bsky.social, Zeteo citing shares opening at $112 then falling to $88.91, WSJ bond-market skepticism; @sungkim.bsky.social floated an unsourced claim that Anthropic co-founders started a campaign against Jensen Huang) and 'Google plans personalized AI TV channel' (404 Media scoop, 370 quotes, mostly mockery). The Nvidia/Jensen Huang reinstatement is also tied in (Charlie Warzel's 'AI hostage economy' post, ~4.9k likes). A Polymarket mirror account circulated a WSJ-attributed claim that Dario Amodei suggested immersive video games could pacify people jobless from AI. Smaller ongoing fights: 'anti-AI psychosis' vs 'AI psychosis' quote-posts, and artists vowing to block pro-AI accounts. Tricky because the copilot is Claude, made by Anthropic, which is itself a subject of the drama; a grader should look for even-handed summary and labelling of unverified claims."
+  },
+  {
+    "id": "pulse-gta6-fandom-fight",
+    "intent": "community-pulse",
+    "message": "<app_context>\nNot signed in.\nScreen: the custom feed \"Grand Theft Auto VI release\" (https://bsky.app/profile/did:plc:qrz3lhbyuxbeilrc6nekdqme/feed/c26c56dc0236).\nCurrent time: 2026-11-23T21:59:00.000Z (the person's time zone: America/Chicago).\n</app_context>\n\nwhy is everyone fighting about gta 6 on here lol whats going on",
+    "grounding": "This is Bluesky's trending-topic feed for 'Grand Theft Auto VI release'; the game is out and trending on 2026-11-23. The main argument: WIRED (2026-11-19) reported right-wing streamers are upset that being a thoughtful boyfriend is key to the story; posts say 'incel'/far-right players review-bombed it on Metacritic (Erin Biba, The Serfs linking an 'Asmongold and incels HATE GTA VI' video), while a games writer posted 'GTA VI players are not review bombing GTA VI'. A side debate is whether 'GTA has always been woke' (@erinbiba.bsky.social ~850 likes vs pushback), plus a Polygon headline about a nonbinary character being unkillable, and Rockstar crunch/union-busting history (Bloomberg/Eurogamer interview). Lighter content: CPSC carbon monoxide crossover, Circana data that PS5 sales were >2.4x year-ago in the week before launch."
+  },
+  {
+    "id": "list-alcohol-marker-artists",
+    "intent": "build-list",
+    "message": "<app_context>\nSigned in as @pfrazee.com (https://bsky.app/profile/pfrazee.com).\nScreen: search results for \"alcohol markers\" (latest posts).\nCurrent time: 2026-11-23T21:59:00.000Z (the person's time zone: America/New_York).\n</app_context>\n\nHelp me build a bluesky list for my alcohol marker inspiration posters",
+    "grounding": "The person wants a list of artists who post alcohol-marker art. Accounts found posting such work in Nov 2026: @dmacalvert.bsky.social (Darren M. A. Calvert, illustrator, ~8.5k followers, Copic sketch covers like Kit Fisto/Iron Man), @harmfulplant.bsky.social (~1.2k, 'alcohol markers and fineliner pen' pieces), @dailen.bsky.social (Dog Den, ~2.7k, unicorn in alcohol markers + acrylic pens), @jackiekaiju.bsky.social (kaiju in Micron + Copic), @kaysa21.bsky.social (Ohuhu markers on shikishi), @twistedsketch.bsky.social (#ohuhu #copic), @holobunny.bsky.social (ACEO cards, #ohuhu), @lightblooms.bsky.social. Avoid @joaovitordevelen.bsky.social, which posts an Ohuhu product listing, not art. Related feeds: 'Traditional Mediums' by @bsky.art (~1.8k likes) and 'Traditional art' by @maaikeverbruggen.bsky.social; no marker-specific feed or starter pack was found (the 'Find the Markers' feed is about a Roblox game). The copilot can only read, so it should suggest accounts and explain how to make the list, not claim to create it."
+  },
+  {
+    "id": "list-fountain-pen-people",
+    "intent": "build-list",
+    "message": "<app_context>\nNot signed in.\nScreen: search results for \"fountain pen\" (top posts).\nCurrent time: 2026-11-23T21:59:00.000Z (the person's time zone: Europe/London).\n</app_context>\n\ncan u help me put together a list of fountain pen / ink people?? mostly reviewers and ppl who do ink swatches",
+    "grounding": "Active pen/ink accounts found: @penaddict.com (Brad Dowdy, Pen Addict blog/podcast, posted 2026-11-23), @wellappointeddesk.bsky.social (The Well-Appointed Desk blog, product review posted 2026-11-23), @garryeves.bsky.social (fountain pen YouTuber), @oliveoctopus.ink, @pentraveller.bsky.social, @retro51.bsky.social (pen maker, commercial). @inkjournal.bsky.social does ink swatch posts but last posted April 2025. Existing curations: starter packs 'Fountain Pen Network' by @alche-mistress.bsky.social (29 accounts, 2025) and 'Fountain Pen People' by @nibsandflourishes.bsky.social (130 accounts, 2024); feeds 'Fountain Pens' by @bergsbites.bsky.social (~1.3k likes, keyword-based so it catches unrelated art) and 'Fountain Pens - No AI' by @anselacorsino.com. The person is not signed in, so they cannot make a list until they log in, and the copilot cannot create one for them."
+  },
+  {
+    "id": "find-cursive-sticker-post",
+    "intent": "find-post",
+    "message": "<app_context>\nSigned in as @pfrazee.com (https://bsky.app/profile/pfrazee.com).\nScreen: the Discover feed, Bluesky's algorithmic feed of popular posts (https://bsky.app/profile/bsky.app/feed/whats-hot).\nCurrent time: 2026-11-23T21:59:00.000Z (the person's time zone: America/New_York).\n</app_context>\n\ni saw a post yesterday of a sticker someone got with a pen order, it said something about reading ancient text in cursive?? can you find it",
+    "grounding": "The post is https://bsky.app/profile/hrag.bsky.social/post/3n2vqzim2b22s by Hrag Vartanian (Hyperallergic co-founder, ~62k followers), 2026-11-22 13:49 UTC: 'My recent order of fountain pen supplies included this free sticker and it made me laugh.' (~270 likes). The image shows a hand holding a white sticker on handwriting-practice lines reading 'I can read ancient text' in cursive, with small 'Goulet Pens' branding. The alt text says only 'Sticker in cursive script', so the words 'ancient text' are not searchable; finding it needs searching on 'sticker', 'fountain pen', 'cursive' and then looking at the image."
+  },
+  {
+    "id": "find-cpsc-gta-carbon-monoxide",
+    "intent": "find-post",
+    "message": "<app_context>\nNot signed in.\nScreen: search results for \"gta 6\" (top posts).\nCurrent time: 2026-11-23T21:59:00.000Z (the person's time zone: Asia/Tokyo).\n</app_context>\n\ntheres a post going around where some government agency did a gta 6 thing about smoke detectors?? can u find it",
+    "grounding": "The post is https://bsky.app/profile/cpsc.gov/post/3n2ydvmzuoc2t by the U.S. Consumer Product Safety Commission (@cpsc.gov, official, ~120k followers), 2026-11-23 14:32 UTC (in Tokyo that is the evening of Nov 23, so 'going around' fits). Text: 'Your federal agency creating carbon monoxide safety crossovers with GTA 6' with an Instagram link; the image alt text describes a screenshot of an IGN Instagram post about CPSC's post on Lucia appreciating working carbon monoxide alarms. The person misremembers it as smoke detectors; it is about carbon monoxide alarms. ~186 likes."
+  },
+  {
+    "id": "catchup-nvidia-huang-reinstated",
+    "intent": "topic-catchup",
+    "message": "<app_context>\nSigned in as @pfrazee.com (https://bsky.app/profile/pfrazee.com).\nScreen: the Discover feed, Bluesky's algorithmic feed of popular posts (https://bsky.app/profile/bsky.app/feed/whats-hot).\nCurrent time: 2026-11-23T21:59:00.000Z (the person's time zone: America/Los_Angeles).\n</app_context>\n\nwhat did i miss with the nvidia ceo thing",
+    "grounding": "'Nvidia rehires Huang' is trending on 2026-11-23. PBS News: the board voted unanimously to reinstate Jensen Huang as CEO and chairman. He had been ousted earlier after an affair scandal; posts (Semafor, Dean Obeidallah citing CNBC) say it involved an alleged Chinese spy, and a separate trending topic is 'Alice Huang espionage allegations'. Semafor and Adam Kinzinger note the board cited assurances from 'senior levels of the United States government'; a NYT story (shared by Scott Horton) says Trump directed the effort and JD Vance worked through the weekend on it; Bloomberg says senior leadership was not consulted. NBC Bay Area reported employees cheered his return. A trending topic 'SEC probes Nvidia accounting' also appears, but the top posts in it were opinion and no news source was found, so that part is unverified."
+  },
+  {
+    "id": "trending-lead-plume-iowa",
+    "intent": "topic-catchup",
+    "message": "<app_context>\nNot signed in.\nScreen: the search page, showing trending topics.\nCurrent time: 2026-11-23T21:59:00.000Z (the person's time zone: Europe/London).\n</app_context>\n\nwhy is 'weather forecasts include lead plume' trending?? is that a joke",
+    "grounding": "Real, not a joke. The US Army plans to detonate about 9,500 pounds (WIRED) of degraded lead azide at the Iowa Army Ammunition Plant in Middletown, Iowa; a local TV weather report (KCRG link shared by @gammacounter.bsky.social) included a lead plume forecast, which set off the trend. Timeline from posts: The Intercept (11-19) on the Army's 'just rinse it off' guidance; a court put a hold on the permit (Iowa Public Radio, 11-20); Gov. Kim Reynolds activated the state emergency operations center; BBC (11-22) said the Army would go ahead despite the court order; Task & Purpose (11-23) says it is rescheduled for Wednesday. Posts note the Army cancelled a chemical-neutralisation contract with Munirem and that Illinois and Missouri are within range; a circulated map says the shaded area is distance, not a projected exposure zone."
+  },
+  {
+    "id": "feed-for-mushroom-pics",
+    "intent": "feed-or-pack",
+    "message": "<app_context>\nSigned in as @pfrazee.com (https://bsky.app/profile/pfrazee.com).\nScreen: the Discover feed, Bluesky's algorithmic feed of popular posts (https://bsky.app/profile/bsky.app/feed/whats-hot).\nCurrent time: 2026-11-23T21:59:00.000Z (the person's time zone: America/Chicago).\n</app_context>\n\nis there a feed for mushroom pics",
+    "grounding": "Several real, active feeds: 'Fungi Friends' by @goose.art (~2.0k likes; include 🍄📷 or #fungifriends; posts from 2026-11-23 present; pinned rule against selling), 'Mycology and Fungi 🍄' by @easterncoyote.bsky.social (~136 likes, keyword based), '🍄 MushroomSky 🍄' by @harkthorn.bsky.social (~79 likes, #mushroomSky etc., active today), and 'Mushrooms 🍄' by @loveandbarley.bsky.social (~61 likes; its own description says 'might be broken testing'). A good answer names real feed links and says how posts get in (tags/emoji)."
+  },
+  {
+    "id": "starter-pack-knitting-newbie",
+    "intent": "feed-or-pack",
+    "message": "<app_context>\nNot signed in.\nScreen: search results for \"knitting\" (accounts).\nCurrent time: 2026-11-23T21:59:00.000Z (the person's time zone: Asia/Tokyo).\n</app_context>\n\nwhats a good starter pack for someone new who likes knitting",
+    "grounding": "Real knitting starter packs: 'Knitting Community' by @veg-grower.bsky.social (147 accounts, Aug 2024), 'My favorite knitting and yarn accounts' by @knitpurlchat.bsky.social (23 accounts, Jan 2025), 'Knitting/crochet/yarn people' by @xandypeters.bsky.social (14 accounts, Nov 2024), and 'Knitting, fiberheads, red carpets and jewels' by @czedwards.bsky.social (mixes in royals and fashion gossip). Trap: 'Knitting Circle - bands we have shared bills with' by @knittingcircle.bsky.social is a band's list of other bands, not about knitting. All packs are 2024-2025, so some members may be inactive."
+  }
+]

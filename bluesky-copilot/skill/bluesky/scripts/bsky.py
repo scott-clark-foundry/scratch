@@ -221,7 +221,10 @@ def fmt_embed(embed: dict | None) -> list[str]:
         lines.append(f"[video: {one_line(embed.get('alt')) or 'no alt text'}]")
     elif kind.startswith("app.bsky.embed.external"):
         ext = embed.get("external", {})
-        lines.append(f"[link: {one_line(ext.get('title'))} — {ext.get('uri')}]")
+        if re.search(r"//[^/]*(klipy|tenor|giphy)\.", ext.get("uri", "")):
+            lines.append(f"[GIF: {one_line(ext.get('title')) or 'no description'}]")
+        else:
+            lines.append(f"[link: {one_line(ext.get('title'))} — {ext.get('uri')}]")
     elif kind.startswith("app.bsky.embed.recordWithMedia"):
         lines += fmt_embed(embed.get("media"))
         lines += fmt_embed({"$type": "app.bsky.embed.record#view", **embed.get("record", {})})
@@ -229,8 +232,19 @@ def fmt_embed(embed: dict | None) -> list[str]:
         record = embed.get("record", {})
         if record.get("value") and record.get("author"):
             text = one_line(record["value"].get("text"), 280)
+            inner = [e.get("$type", "") for e in record.get("embeds") or []]
+            deeper = any("embed.record" in t for t in inner)
+            extra = " That post has media attached." if any(("images" in t or "video" in t or "external" in t or "WithMedia" in t) for t in inner) else ""
+            if deeper:
+                extra += " That post itself quotes another post: run `quote-chain` on this post to read the whole chain."
             lines.append(f"[quotes {fmt_actor(record['author'])}: {text} — "
-                         f"{web_url(record.get('uri', ''), record['author'].get('handle'))}]")
+                         f"{web_url(record.get('uri', ''), record['author'].get('handle'))}]{extra}")
+        elif record.get("$type", "").endswith("#viewNotFound"):
+            lines.append("[quotes a post that has been deleted]")
+        elif record.get("$type", "").endswith("#viewBlocked"):
+            lines.append("[quotes a post hidden by a block between the two accounts]")
+        elif record.get("$type", "").endswith("#viewDetached"):
+            lines.append("[quotes a post whose author detached it from this quote]")
         elif record.get("displayName"):
             lines.append(f"[attached: {record.get('displayName')} — {web_url(record.get('uri', ''))}]")
         else:
@@ -516,11 +530,94 @@ def cmd_reposts(args):
 
 
 def cmd_quotes(args):
-    data = xrpc(
-        "app.bsky.feed.getQuotes",
-        {"uri": to_at_uri(args.ref), "limit": args.limit, "cursor": args.cursor},
+    uri = to_at_uri(args.ref)
+    data = xrpc("app.bsky.feed.getQuotes", {"uri": uri, "limit": args.limit, "cursor": args.cursor})
+    posts = data.get("posts", [])
+    total = (xrpc("app.bsky.feed.getPosts", {"uris": [uri]}).get("posts") or [{}])[0].get("quoteCount", "?")
+    if args.top:
+        posts = sorted(posts, key=lambda q: q.get("likeCount", 0), reverse=True)
+    order = "most liked first among those fetched" if args.top else "most recent first"
+    head = f"Showing {len(posts)} of {total} quote posts, {order}. Each one is that author's own comment on the quoted post."
+    lines = []
+    for post in posts:
+        text = "\n".join(l for l in fmt_post(post).splitlines() if not l.strip().startswith("[quotes "))
+        lines.append(text)
+    emit(args, data, head + "\n\n" + "\n\n".join(lines))
+
+
+def _quoted_ref(post: dict) -> tuple[str | None, str | None]:
+    """Return (uri of the post this one quotes, reason it is unavailable)."""
+    embed = post.get("embed") or {}
+    kind = embed.get("$type", "")
+    if kind.startswith("app.bsky.embed.recordWithMedia"):
+        record = (embed.get("record") or {}).get("record") or {}
+    elif kind.startswith("app.bsky.embed.record"):
+        record = embed.get("record") or {}
+    else:
+        return None, None
+    rtype = record.get("$type", "")
+    if "app.bsky.feed.post" not in record.get("uri", ""):
+        return None, None  # it embeds a feed, list or starter pack, not a post
+    if rtype.endswith("#viewNotFound"):
+        return None, "the quoted post was deleted"
+    if rtype.endswith("#viewBlocked"):
+        return None, "the quoted post is hidden by a block between the two accounts"
+    if rtype.endswith("#viewDetached"):
+        return None, "the quoted post's author detached it from this quote"
+    return record.get("uri"), None
+
+
+def cmd_quote_chain(args):
+    """Follow a chain of quote posts back to the post that started it."""
+    uri = to_at_uri(args.ref)
+    chain, ending = [], "the first post quotes nothing; it is where the chain starts"
+    seen = set()
+    while uri and uri not in seen and len(chain) < args.max_depth:
+        seen.add(uri)
+        posts = xrpc("app.bsky.feed.getPosts", {"uris": [uri]}).get("posts", [])
+        if not posts:
+            ending = "an earlier quoted post is deleted or hidden from logged-out visitors, so the start of the chain is missing"
+            break
+        chain.append(posts[0])
+        uri, problem = _quoted_ref(posts[0])
+        if problem:
+            ending = f"{problem}, so the start of the chain is missing"
+    else:
+        if uri and len(chain) >= args.max_depth:
+            ending = f"stopped after {args.max_depth} posts; the chain goes back further (raise --max-depth)"
+    if not chain:
+        raise ApiError("That post is deleted or not visible without a login.")
+    chain.reverse()  # oldest first
+    total = len(chain)
+    if total == 1:
+        emit(args, {"chain": chain}, fmt_post(chain[0], note="THE POST YOU ASKED ABOUT; it does not quote another post"))
+        return
+    blocks = [f"A chain of {total} posts, oldest first. Each post quotes and comments on the one before it. ({ending[0].upper() + ending[1:]}.)"]
+    for n, post in enumerate(chain, 1):
+        if n == total:
+            note = f"{n} of {total}: THE POST YOU ASKED ABOUT, quoting post {n - 1}"
+        elif n == 1:
+            note = f"1 of {total}: the earliest post in the chain"
+        else:
+            note = f"{n} of {total}: quotes post {n - 1}"
+        # Drop the inline "[quotes …]" line: the quoted post is already shown above in full.
+        text = "\n".join(line for line in fmt_post(post, note=note).splitlines() if not line.strip().startswith("[quotes "))
+        blocks.append(text)
+    texts = [one_line(post.get("record", {}).get("text")).lower() for post in chain]
+    repeated = max((texts.count(t) for t in set(texts) if t), default=0)
+    if repeated >= 3:
+        blocks.append(
+            f"{repeated} of these posts repeat the same words. This is a chain game: each person quotes the "
+            "previous post, repeats the prompt, and gives their own answer, usually as a picture or GIF. "
+            "The posts are separate answers to one prompt, not a conversation."
+        )
+    blocks.append(
+        "Reading a quote chain: each author is commenting on the post before theirs. They may be agreeing, "
+        "adding to it, joking, disagreeing or mocking it, so read what each one says. Attribute every statement "
+        "to the author who wrote it, never to someone who merely quoted it. The earliest post is the original "
+        "context; later posts may have drifted from it. To see who else quoted any post here, run: quotes LINK --top"
     )
-    emit(args, data, "\n\n".join(fmt_post(post) for post in data.get("posts", [])))
+    emit(args, {"chain": chain}, "\n\n".join(blocks))
 
 
 def cmd_relationship(args):
@@ -919,7 +1016,15 @@ def build_parser() -> argparse.ArgumentParser:
         ("reposts", cmd_reposts, "List accounts that reposted a post."),
         ("quotes", cmd_quotes, "List posts that quote a post."),
     ]:
-        add(name, func, text, default_limit=50).add_argument("ref")
+        sub_parser = add(name, func, text, default_limit=50)
+        sub_parser.add_argument("ref")
+        if name == "quotes":
+            sub_parser.add_argument("--top", action="store_true", help="sort the fetched quotes by likes instead of by time")
+
+    p = add("quote-chain", cmd_quote_chain,
+            "Follow a chain of quote posts (a post quoting a post quoting a post) back to where it started.", paged=False)
+    p.add_argument("ref")
+    p.add_argument("--max-depth", type=int, default=20, help="most posts to follow back (default 20)")
 
     p = add("relationship", cmd_relationship, "Say whether two accounts follow each other.", paged=False)
     p.add_argument("actor")
